@@ -1,0 +1,67 @@
+Project Title: VentriLinks – Connecting Biotech Startups to Capital
+
+Project Type: Full-Stack Web App or Modern Landing Page
+
+Description:
+Build a professional, responsive, and modern website for VentriLinks, an AI-powered matchmaking platform that helps early-stage drug development startups connect with the right venture capital investors.
+
+The site should explain what VentriLinks is, how it works, and why it's valuable — all while conveying credibility, innovation, and simplicity. This is not just a tech demo — it's a startup-grade website that could impress both investors and founders.
+
+🔧 Core Features to Include:
+🔹 Hero Section (Top Banner)
+Bold headline (e.g., “Supercharge Your Biotech Fundraising”)
+
+Subheadline (e.g., “AI-matched capital connections for early-stage drug development startups.”)
+
+Primary CTA Button (e.g., “Request Early Access” or “Join Beta”)
+
+Clean, futuristic background — think molecular structures or neural networks subtly in background
+
+🔹 How It Works (3-Step Visual Section)
+Step 1: Startups fill out dynamic profiles
+
+Step 2: AI performs semantic and vector-based matching
+
+Step 3: Investors and startups connect via smart dealrooms
+
+Add icons or minimal animations (scroll reveal is great here)
+
+🔹 Key Value Propositions
+“Investor Intelligence Engine”
+
+“Startup Enrichment Pipeline”
+
+“Smart Deal Flow Management”
+
+Keep these in 3–4 cards or grid layout
+
+🔹 Testimonials or Case Study Block
+Placeholder for quotes from founders or investors
+
+Can use grayscale headshots or stylized avatars
+
+🔹 Newsletter Signup / Early Access
+Simple input field for email + submit
+
+Optional waitlist counter or confirmation message
+
+🔹 Footer
+Company name and placeholder links: About, Contact, LinkedIn, Terms
+
+Optional social icons (LinkedIn, GitHub, Twitter)
+
+🎨 Design Style Guidelines
+Sleek, minimalist, biotech + finance fusion
+
+Color scheme: Deep blue, white, and soft neon accents (like teal or violet)
+
+Font: Use modern sans-serif fonts (e.g., Inter, Poppins, or Roboto)
+
+Mobile responsive (must look good on phones + tablets)
+
+📦 Tech Stack Suggestions
+Frontend: HTML, Tailwind CSS (or Bootstrap), JavaScript
+
+Optional: React.js, GSAP animations for interactions
+
+Backend (optional): Firebase, Node.js (if collecting signups or building user auth)

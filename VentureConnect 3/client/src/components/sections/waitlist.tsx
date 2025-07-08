@@ -58,6 +58,10 @@ export default function Waitlist() {
     waitlistMutation.mutate(email);
   };
 
+  const handleTryBeta = () => {
+    window.open('http://localhost:5000/get-matched', '_blank');
+  };
+
   return (
     <section id="waitlist" className="py-20 bg-gradient-to-r from-accent to-accent-purple">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -77,14 +81,47 @@ export default function Waitlist() {
           transition={{ duration: 0.6, delay: 0.2 }}
           viewport={{ once: true }}
         >
-          Join the waitlist and be among the first biotech startups to experience AI-powered investor matching.
+          Try our beta platform now or join the waitlist for updates on new features and improvements.
         </motion.p>
+        
+        {/* Try Beta CTA */}
+        <motion.div 
+          className="mb-8"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          viewport={{ once: true }}
+        >
+          <Button 
+            onClick={handleTryBeta}
+            className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 text-lg font-semibold hover:from-green-700 hover:to-green-800 transform hover:scale-105 transition-all duration-200 shadow-lg"
+            size="lg"
+          >
+            🚀 Try Beta - Get Matched Now
+          </Button>
+          <p className="text-blue-100 text-sm mt-2">
+            Get instant access to our AI-powered VC matching platform
+          </p>
+        </motion.div>
+
+        {/* Divider */}
+        <motion.div 
+          className="flex items-center justify-center my-8"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          viewport={{ once: true }}
+        >
+          <div className="border-t border-blue-200 flex-grow"></div>
+          <span className="px-4 text-blue-100 text-sm">OR</span>
+          <div className="border-t border-blue-200 flex-grow"></div>
+        </motion.div>
         
         <motion.div 
           className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-8 inline-block"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
           viewport={{ once: true }}
         >
           <div className="flex items-center justify-center space-x-4">
@@ -125,7 +162,7 @@ export default function Waitlist() {
               </Button>
             </div>
             <p className="text-blue-100 text-sm mt-4">
-              No spam. Unsubscribe anytime. Early access notifications only.
+              Get notified about new features, improvements, and exclusive access to premium tools.
             </p>
           </motion.form>
         ) : (
@@ -135,7 +172,7 @@ export default function Waitlist() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
           >
-            <p className="text-white">🎉 You're on the list! We'll notify you when early access opens.</p>
+            <p className="text-white">🎉 You're on the list! We'll notify you about updates and new features.</p>
           </motion.div>
         )}
       </div>

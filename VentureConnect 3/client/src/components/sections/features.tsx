@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
-import { BarChart3, TrendingUp, Shield, CheckCircle } from "lucide-react";
+import { BarChart3, TrendingUp, Mail, CheckCircle } from "lucide-react";
 
 const features = [
   {
     icon: BarChart3,
     title: "Investor Intelligence Engine",
-    description: "Deep analytics on 500+ biotech-focused VCs including investment patterns, portfolio composition, and deal preferences powered by real-time market data.",
+    description: "Deep insights on thousands of biotech-focused VCs including investment patterns, portfolio composition, and deal preferences powered by real-time market data.",
     color: "bg-accent",
     gradient: "from-blue-50 to-cyan-50",
     features: ["Real-time investor activity tracking", "Therapeutic area expertise mapping"]
@@ -14,17 +14,17 @@ const features = [
     icon: TrendingUp,
     title: "Startup Enrichment Pipeline",
     description: "AI-enhanced profile optimization that surfaces key differentiators, validates market potential, and positions startups for maximum investor appeal.",
-    color: "bg-green-600",
+    color: "bg-purple-600",
     gradient: "from-purple-50 to-pink-50",
     features: ["Automated competitive analysis", "Market validation insights"]
   },
   {
-    icon: Shield,
-    title: "Smart Deal Flow Management",
-    description: "Streamlined workflows from initial matching through term sheet negotiation with built-in compliance, document management, and progress tracking.",
+    icon: Mail,
+    title: "Deal Flow Tracking",
+    description: "Backend management system that helps startups track opportunities, craft hyperpersonalized outreach emails, and manage investor relationships through intelligent workflow assistance.",
     color: "bg-green-500",
     gradient: "from-green-50 to-teal-50",
-    features: ["Encrypted document sharing", "Automated milestone tracking"]
+    features: ["Hyperpersonalized email generation", "Backend startup management"]
   }
 ];
 

@@ -1,50 +1,59 @@
 import { motion } from "framer-motion";
-import { User, Brain, Handshake } from "lucide-react";
+import { User, Database } from "lucide-react";
 
 const steps = [
   {
     icon: User,
     title: "Create Dynamic Profiles",
-    description: "Startups build comprehensive profiles showcasing their drug development pipeline, team expertise, and funding needs with our intelligent form system.",
+    description:
+      "Startups build comprehensive profiles showcasing their drug development pipeline, team expertise, and funding needs with our intelligent form system.",
     color: "from-accent to-accent-purple",
-    number: 1
+    number: 1,
+    type: "icon",
   },
   {
-    icon: Brain,
+    icon: null,
     title: "AI-Powered Matching",
-    description: "Our semantic and vector-based AI analyzes startup profiles against investor preferences, therapeutic areas, and investment criteria for optimal matches.",
+    description:
+      "Our semantic and vector-based AI analyzes startup profiles against investor preferences, therapeutic areas, and investment criteria for optimal matches. We have VC fingerprint trained on thousands of data points per VC.",
     color: "from-accent-purple to-purple-600",
-    number: 2
+    number: 2,
+    type: "shape",
   },
   {
-    icon: Handshake,
-    title: "Smart Deal Rooms",
-    description: "Matched parties connect through secure, intelligent deal rooms with guided workflows, document sharing, and progress tracking for efficient due diligence.",
+    icon: Database,
+    title: "Deal Flow Tracking",
+    description:
+      "Backend management system that helps startups track opportunities, craft hyperpersonalized emails based on VC preferences and investment patterns, and manage investor relationships effectively.",
     color: "from-green-500 to-accent",
-    number: 3
-  }
+    number: 3,
+    type: "icon",
+  },
 ];
 
 export default function HowItWorks() {
   return (
     <section id="how-it-works" className="py-20 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div 
+        <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">How VentriLinks Works</h2>
+          <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
+            How VentriLinks Works
+          </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Our AI-powered platform streamlines the connection between biotech innovators and capital providers
+            Our AI-powered platform streamlines the connection between biotech
+            innovators and capital providers
           </p>
         </motion.div>
-        
+
         <div className="grid md:grid-cols-3 gap-12">
           {steps.map((step, index) => (
-            <motion.div 
+            <motion.div
               key={index}
               className="text-center group"
               initial={{ opacity: 0, y: 30 }}
@@ -53,14 +62,34 @@ export default function HowItWorks() {
               viewport={{ once: true }}
             >
               <div className="relative mb-8">
-                <div className={`w-20 h-20 bg-gradient-to-br ${step.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <step.icon className="w-10 h-10 text-white" />
+                <div
+                  className={`w-20 h-20 bg-gradient-to-br ${step.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}
+                >
+                  {step.type === "shape" ? (
+                    // Neural-style AI node SVG
+                    <svg
+                      className="w-10 h-10 text-white"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+                    </svg>
+                  ) : step.icon ? (
+                    <step.icon className="w-10 h-10 text-white" />
+                  ) : null}
                 </div>
                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center text-sm font-bold">
                   {step.number}
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-primary mb-4">{step.title}</h3>
+              <h3 className="text-2xl font-bold text-primary mb-4">
+                {step.title}
+              </h3>
               <p className="text-muted-foreground leading-relaxed">
                 {step.description}
               </p>

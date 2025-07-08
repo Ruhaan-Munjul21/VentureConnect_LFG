@@ -30,6 +30,10 @@ export default function Navigation() {
     }
   };
 
+  const handleTryBeta = () => {
+    window.open('http://localhost:5000/get-matched', '_blank');
+  };
+
   return (
     <nav className="fixed top-0 w-full z-50 glass-effect border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -76,10 +80,17 @@ export default function Navigation() {
           
           <div className="flex items-center space-x-4">
             <Button 
-              onClick={() => handleSectionClick('waitlist')}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              onClick={handleTryBeta}
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-lg"
             >
-              Join Beta
+              Try Beta
+            </Button>
+            <Button 
+              onClick={() => handleSectionClick('waitlist')}
+              variant="outline"
+              className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+            >
+              Join Waitlist
             </Button>
           </div>
           
@@ -128,6 +139,23 @@ export default function Navigation() {
               >
                 Contact
               </button>
+              <div className="px-3 py-2 space-y-2">
+                <Button 
+                  onClick={handleTryBeta}
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white"
+                  size="sm"
+                >
+                  Try Beta
+                </Button>
+                <Button 
+                  onClick={() => handleSectionClick('waitlist')}
+                  variant="outline"
+                  className="w-full border-accent text-accent"
+                  size="sm"
+                >
+                  Join Waitlist
+                </Button>
+              </div>
             </div>
           </div>
         )}

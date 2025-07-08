@@ -9,6 +9,10 @@ export default function Hero() {
     }
   };
 
+  const handleTryBeta = () => {
+    window.open('http://localhost:5000/get-matched', '_blank');
+  };
+
   return (
     <section className="relative min-h-screen flex items-center molecular-bg overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-background to-purple-50/50"></div>
@@ -47,18 +51,19 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             <Button 
-              onClick={scrollToWaitlist}
+              onClick={handleTryBeta}
               className="bg-gradient-to-r from-accent to-accent-purple text-accent-foreground px-8 py-4 text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
               size="lg"
             >
-              Request Early Access
+              Try Beta - Get Matched Now
             </Button>
             <Button 
+              onClick={scrollToWaitlist}
               variant="outline"
               className="border-2 border-accent text-accent px-8 py-4 text-lg hover:bg-accent hover:text-accent-foreground transition-all duration-200"
               size="lg"
             >
-              Watch Demo
+              Join Waitlist
             </Button>
           </motion.div>
           

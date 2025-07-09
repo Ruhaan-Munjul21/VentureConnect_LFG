@@ -35,6 +35,7 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    // Removed: await seedData();
     const server = await registerRoutes(app);
     
     // Error handling middleware

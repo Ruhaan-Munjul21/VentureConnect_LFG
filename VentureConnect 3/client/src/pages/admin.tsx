@@ -30,6 +30,9 @@ const SUBMISSION_FIELDS = {
 };
 
 class AirtableAPI {
+  private baseUrl: string;
+  private headers: Record<string, string>;
+
   constructor() {
     this.baseUrl = `https://api.airtable.com/v0/${BASE_ID}`;
     this.headers = {
@@ -77,7 +80,7 @@ class AirtableAPI {
     }
   }
 
-  async updateMatch(recordId, fields) {
+  async updateMatch(recordId: string, fields: Record<string, any>) {
     try {
       const response = await fetch(`${this.baseUrl}/${TABLES.MATCHES}/${recordId}`, {
         method: 'PATCH',
@@ -240,6 +243,8 @@ export default function AdminDashboard() {
                 <Send className="h-4 w-4 mr-2" />
                 Send to Client
               </button>
+              <a href="/admin/clients" className="text-blue-600 hover:text-blue-700">Client Management</a>
+              <a href="/airtable-test" className="text-blue-600 hover:text-blue-700">Test Airtable</a>
               <a href="/" className="text-blue-600 hover:text-blue-700">← Back to Home</a>
             </div>
           </div>

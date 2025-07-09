@@ -79,6 +79,11 @@ export default function Navigation() {
           </div>
           
           <div className="flex items-center space-x-4">
+            <Link href="/client/login">
+              <Button variant="ghost" className="text-muted-foreground hover:text-accent">
+                Client Portal
+              </Button>
+            </Link>
             <Button 
               onClick={handleTryBeta}
               className="bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-lg"
@@ -140,6 +145,11 @@ export default function Navigation() {
                 Contact
               </button>
               <div className="px-3 py-2 space-y-2">
+                <Link href="/client/login">
+                  <Button variant="ghost" className="w-full text-muted-foreground hover:text-accent" size="sm">
+                    Client Portal
+                  </Button>
+                </Link>
                 <Button 
                   onClick={handleTryBeta}
                   className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white"

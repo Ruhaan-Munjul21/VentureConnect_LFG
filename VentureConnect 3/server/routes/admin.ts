@@ -1,57 +1,19 @@
 import express from "express";
 import type { Request, Response } from "express";
+import { airtableService } from "../airtable";
 
 const router = express.Router();
 
-// Mock data - replace with actual database queries
-const mockStartups = [
-  {
-    id: "1",
-    companyName: "BioNova Therapeutics",
-    founderName: "Dr. Sarah Chen",
-    email: "sarah@bionova.com",
-    phone: "+1-555-0123",
-    sector: "Biotechnology",
-    stage: "Series A",
-    fundingGoal: "$15M",
-    description: "Developing novel cancer immunotherapies using engineered T-cells",
-    submittedAt: "2024-07-06T10:30:00Z",
-    status: "new"
-  },
-  {
-    id: "2",
-    companyName: "GeneTech Solutions",
-    founderName: "Michael Rodriguez",
-    email: "mike@genetech.io",
-    phone: "+1-555-0124",
-    sector: "Gene Therapy",
-    stage: "Seed",
-    fundingGoal: "$5M",
-    description: "CRISPR-based gene editing platform for rare diseases",
-    submittedAt: "2024-07-05T14:22:00Z",
-    status: "reviewed"
-  },
-  {
-    id: "3",
-    companyName: "NeuroLink Biotech",
-    founderName: "Dr. Emily Johnson",
-    email: "emily@neurolink.bio",
-    sector: "Neuroscience",
-    stage: "Series B",
-    fundingGoal: "$25M",
-    description: "Brain-computer interfaces for neurological disorders",
-    submittedAt: "2024-07-04T09:15:00Z",
-    status: "matched"
-  }
-];
-
-// GET /api/admin/startups - Get all startup applications
-router.get("/startups", (req: Request, res: Response) => {
+// GET /api/admin/startups - Get all startup applications from Airtable
+router.get("/startups", async (req: Request, res: Response) => {
   try {
+    const startups = await airtableService.getStartups();
+    const transformedStartups = startups.map((record: any) => airtableService.transformStartupToClient(record));
+    
     res.json({
       success: true,
-      data: mockStartups,
-      count: mockStartups.length
+      data: transformedStartups,
+      count: transformedStartups.length
     });
   } catch (error) {
     console.error("Error fetching startups:", error);
@@ -91,15 +53,18 @@ router.put("/startups/:id/status", (req: Request, res: Response) => {
   }
 });
 
-// GET /api/admin/stats - Get dashboard statistics
-router.get("/stats", (req: Request, res: Response) => {
+// GET /api/admin/stats - Get dashboard statistics from Airtable
+router.get("/stats", async (req: Request, res: Response) => {
   try {
+    const startups = await airtableService.getStartups();
+    const matches = await airtableService.getMatches();
+    
     const stats = {
-      total: mockStartups.length,
-      new: mockStartups.filter(s => s.status === 'new').length,
-      reviewed: mockStartups.filter(s => s.status === 'reviewed').length,
-      matched: mockStartups.filter(s => s.status === 'matched').length,
-      contacted: mockStartups.filter(s => s.status === 'contacted').length
+      total: startups.length,
+      new: startups.filter((s: any) => !s.fields['Status'] || s.fields['Status'] === 'new').length,
+      reviewed: startups.filter((s: any) => s.fields['Status'] === 'reviewed').length,
+      matched: startups.filter((s: any) => s.fields['Status'] === 'matched').length,
+      contacted: startups.filter((s: any) => s.fields['Status'] === 'contacted').length
     };
 
     res.json({
@@ -115,15 +80,17 @@ router.get("/stats", (req: Request, res: Response) => {
   }
 });
 
-// POST /api/admin/export - Export data to CSV
-router.post("/export", (req: Request, res: Response) => {
+// POST /api/admin/export - Export data to CSV from Airtable
+router.post("/export", async (req: Request, res: Response) => {
   try {
+    const startups = await airtableService.getStartups();
     const csvHeaders = "Company,Founder,Email,Phone,Sector,Stage,Funding Goal,Status,Submitted At\n";
-    const csvData = mockStartups.map(startup => 
-      `"${startup.companyName}","${startup.founderName}","${startup.email}","${startup.phone || ''}","${startup.sector}","${startup.stage}","${startup.fundingGoal}","${startup.status}","${startup.submittedAt}"`
-    ).join('\n');
+    const csvData = startups.map((startup: any) => {
+      const fields = startup.fields;
+      return `"${fields['Startup Name'] || ''}","${fields['Contact Name'] || ''}","${fields['Email'] || ''}","${fields['Phone Number'] || ''}","${fields['Drug Modality'] || ''}","${fields['Investment Stage'] || ''}","${fields['Investment Amount'] || ''}","${fields['Status'] || ''}","${startup.createdTime}"`;
+    });
     
-    const csv = csvHeaders + csvData;
+    const csv = csvHeaders + csvData.join('\n');
     
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="startup_applications.csv"');
@@ -133,6 +100,259 @@ router.post("/export", (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Failed to export data"
+    });
+  }
+});
+
+// Client Companies Management - Now using Airtable
+// GET /api/admin/clients - Get all client companies from Airtable
+router.get("/clients", async (req: Request, res: Response) => {
+  try {
+    const startups = await airtableService.getStartups();
+    const transformedClients = startups.map((record: any) => airtableService.transformStartupToClient(record));
+    
+    res.json({
+      success: true,
+      data: transformedClients,
+      count: transformedClients.length
+    });
+  } catch (error) {
+    console.error("Error fetching clients:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch client companies"
+    });
+  }
+});
+
+// POST /api/admin/clients - Create new client company in Airtable
+router.post("/clients", async (req: Request, res: Response) => {
+  try {
+    const fields = airtableService.transformClientToStartupFields(req.body);
+    const result = await airtableService.createStartup(fields);
+    
+    if (result && result.records) {
+      const client = airtableService.transformStartupToClient(result.records[0]);
+      res.json({
+        success: true,
+        message: "Client company created successfully",
+        data: client
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Failed to create client company"
+      });
+    }
+  } catch (error) {
+    console.error("Error creating client:", error);
+    res.status(400).json({
+      success: false,
+      message: "Failed to create client company"
+    });
+  }
+});
+
+// PUT /api/admin/clients/:id - Update client company in Airtable
+router.put("/clients/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    console.log('Updating client with ID:', id);
+    console.log('Update data:', req.body);
+    
+    const fields = airtableService.transformClientToStartupFields(req.body);
+    console.log('Transformed fields:', fields);
+    
+    const result = await airtableService.updateStartup(id, fields);
+    console.log('Update result:', result);
+    
+    if (result && result.records && result.records.length > 0) {
+      const client = airtableService.transformStartupToClient(result.records[0]);
+      res.json({
+        success: true,
+        message: "Client company updated successfully",
+        data: client
+      });
+    } else {
+      console.error('Update failed - no result or no records');
+      res.status(400).json({
+        success: false,
+        message: "Failed to update client company - no result returned"
+      });
+    }
+  } catch (error) {
+    console.error("Error updating client:", error);
+    res.status(400).json({
+      success: false,
+      message: "Failed to update client company"
+    });
+  }
+});
+
+// DELETE /api/admin/clients/:id - Delete client company from Airtable
+router.delete("/clients/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const success = await airtableService.deleteStartup(id);
+    
+    if (success) {
+      res.json({
+        success: true,
+        message: "Client company deleted successfully"
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Failed to delete client company"
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting client:", error);
+    res.status(400).json({
+      success: false,
+      message: "Failed to delete client company"
+    });
+  }
+});
+
+// VC Investors Management - Now using Airtable
+// GET /api/admin/vcs - Get all VC investors from Airtable
+router.get("/vcs", async (req: Request, res: Response) => {
+  try {
+    const vcs = await airtableService.getVCs();
+    const transformedVCs = vcs.map((record: any) => airtableService.transformVCToInvestor(record));
+    
+    res.json({
+      success: true,
+      data: transformedVCs,
+      count: transformedVCs.length
+    });
+  } catch (error) {
+    console.error("Error fetching VCs:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch VC investors"
+    });
+  }
+});
+
+// POST /api/admin/vcs - Create new VC investor in Airtable
+router.post("/vcs", async (req: Request, res: Response) => {
+  try {
+    const fields = airtableService.transformInvestorToVCFields(req.body);
+    const result = await airtableService.createVC(fields);
+    
+    if (result && result.records) {
+      const vc = airtableService.transformVCToInvestor(result.records[0]);
+      res.json({
+        success: true,
+        message: "VC investor created successfully",
+        data: vc
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Failed to create VC investor"
+      });
+    }
+  } catch (error) {
+    console.error("Error creating VC:", error);
+    res.status(400).json({
+      success: false,
+      message: "Failed to create VC investor"
+    });
+  }
+});
+
+// Client Matches Management - Now using Airtable
+// GET /api/admin/matches - Get all client matches from Airtable
+router.get("/matches", async (req: Request, res: Response) => {
+  try {
+    const matches = await airtableService.getMatches();
+    const transformedMatches = matches.map((record: any) => airtableService.transformMatchToClientMatch(record));
+    
+    res.json({
+      success: true,
+      data: transformedMatches,
+      count: transformedMatches.length
+    });
+  } catch (error) {
+    console.error("Error fetching matches:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch client matches"
+    });
+  }
+});
+
+// POST /api/admin/matches - Create new client match in Airtable
+router.post("/matches", async (req: Request, res: Response) => {
+  try {
+    console.log('Creating match with data:', req.body);
+    
+    const fields = airtableService.transformClientMatchToMatchFields(req.body);
+    console.log('Transformed match fields:', fields);
+    
+    const result = await airtableService.createMatch(fields);
+    console.log('Create match result:', result);
+    
+    // Airtable returns a single object, not a records array
+    if (result && result.id) {
+      const match = airtableService.transformMatchToClientMatch(result);
+      res.json({
+        success: true,
+        message: "Client match created successfully",
+        data: match
+      });
+    } else {
+      console.error('Match creation failed - no result or no id');
+      res.status(400).json({
+        success: false,
+        message: "Failed to create client match - no result returned"
+      });
+    }
+  } catch (error) {
+    console.error('Error creating match:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create client match"
+    });
+  }
+});
+
+// PUT /api/admin/matches/:id - Update client match in Airtable
+router.put("/matches/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    console.log('Updating match with ID:', id);
+    console.log('Update data:', req.body);
+    
+    const fields = airtableService.transformClientMatchToMatchFields(req.body);
+    console.log('Transformed match fields:', fields);
+    
+    const result = await airtableService.updateMatch(id, fields);
+    console.log('Update match result:', result);
+    
+    if (result && result.records && result.records.length > 0) {
+      const match = airtableService.transformMatchToClientMatch(result.records[0]);
+      res.json({
+        success: true,
+        message: "Match updated successfully",
+        data: match
+      });
+    } else {
+      console.error('Match update failed - no result or no records');
+      res.status(400).json({
+        success: false,
+        message: "Failed to update match - no result returned"
+      });
+    }
+  } catch (error) {
+    console.error('Error updating match:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update match"
     });
   }
 });

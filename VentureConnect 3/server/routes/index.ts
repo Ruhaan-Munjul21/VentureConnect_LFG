@@ -1,10 +1,14 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import adminRoutes from "./admin";
+import clientRoutes from "./client";
 
 export function registerRoutes(app: Express): Server {
   // Register admin routes
   app.use("/api/admin", adminRoutes);
+
+  // Register client routes
+  app.use("/api/client", clientRoutes);
 
   // Health check endpoint
   app.get("/api/health", (req, res) => {

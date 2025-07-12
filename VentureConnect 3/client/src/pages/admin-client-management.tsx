@@ -84,6 +84,80 @@ export default function AdminClientManagement() {
   const [editingStartup, setEditingStartup] = useState<ClientCompany | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddMatch, setShowAddMatch] = useState<string | null>(null);
+  
+  // Add matching state
+  const [isRunningMatch, setIsRunningMatch] = useState(false);
+  const [matchingStatus, setMatchingStatus] = useState<Record<string, string>>({});
+
+  // Add debug console logs
+  console.log("=== ADMIN CLIENT MANAGEMENT LOADED ===");
+  console.log("Submissions data:", submissions);
+  console.log("Matching status:", matchingStatus);
+
+  // Add runMatching function
+  const runMatching = async (startupId: string) => {
+    console.log("Running matching for startup:", startupId);
+    setIsRunningMatch(true);
+    setMatchingStatus(prev => ({ ...prev, [startupId]: 'running' }));
+    
+    try {
+      // Step 1: Update the "Run Match" field to checked
+      console.log("Making update request to /api/admin/update-startup");
+      const updateResponse = await fetch('/api/admin/update-startup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startupId: startupId,
+          runMatch: true
+        })
+      });
+      
+      console.log("Update response status:", updateResponse.status);
+      console.log("Update response ok:", updateResponse.ok);
+      console.log("Update response headers:", updateResponse.headers);
+      
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        console.error("Update response error text:", errorText);
+        throw new Error(`Failed to update startup: ${updateResponse.status} - ${errorText}`);
+      }
+      
+      const updateData = await updateResponse.json();
+      console.log("Update response data:", updateData);
+      
+      // Step 2: Trigger the matching software
+      console.log("Making matching request to /api/admin/run-matching");
+      const matchingResponse = await fetch('/api/admin/run-matching', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startupId: startupId
+        })
+      });
+      
+      console.log("Matching response status:", matchingResponse.status);
+      console.log("Matching response ok:", matchingResponse.ok);
+      
+      if (matchingResponse.ok) {
+        const matchingData = await matchingResponse.json();
+        console.log("Matching response data:", matchingData);
+        setMatchingStatus(prev => ({ ...prev, [startupId]: 'completed' }));
+        setSuccess('Matching completed successfully!');
+        // Refresh the data
+        await loadData();
+      } else {
+        const errorText = await matchingResponse.text();
+        console.error("Matching response error text:", errorText);
+        throw new Error(`Failed to run matching: ${matchingResponse.status} - ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error running matching:', error);
+      setMatchingStatus(prev => ({ ...prev, [startupId]: 'error' }));
+      setError('Error running matching. Please try again.');
+    } finally {
+      setIsRunningMatch(false);
+    }
+  };
 
   // New company form
   const [newCompany, setNewCompany] = useState({
@@ -295,6 +369,36 @@ export default function AdminClientManagement() {
            contactName.toLowerCase().includes(searchLower);
   });
 
+  // Group submissions by companyName (startup name)
+  const companies = React.useMemo(() => {
+    const grouped: Record<string, {
+      companyName: string;
+      emails: string[];
+      records: ClientCompany[];
+      hasActiveAccount: boolean;
+      totalSubmissions: number;
+    }> = {};
+    submissions.forEach(record => {
+      const companyName = record.companyName;
+      if (!grouped[companyName]) {
+        grouped[companyName] = {
+          companyName,
+          emails: [],
+          records: [],
+          hasActiveAccount: false,
+          totalSubmissions: 0
+        };
+      }
+      grouped[companyName].emails.push(record.email);
+      grouped[companyName].records.push(record);
+      grouped[companyName].totalSubmissions++;
+      if (record.isActive) {
+        grouped[companyName].hasActiveAccount = true;
+      }
+    });
+    return Object.values(grouped);
+  }, [submissions]);
+
   const addMatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showAddMatch) return;
@@ -504,16 +608,16 @@ export default function AdminClientManagement() {
 
         {/* Companies List */}
         <div className="space-y-4">
-          {filteredSubmissions.map((submission) => {
-            const stats = getMatchStats(submission.id);
-            const isExpanded = expandedStartup === submission.companyName;
-            const startupMatches = getStartupMatches(submission.id);
+          {companies.map((companyGroup) => {
+            const stats = getMatchStats(companyGroup.records[0].id); // Assuming all records in a group have the same ID or can be derived
+            const isExpanded = expandedStartup === companyGroup.companyName;
+            const startupMatches = getStartupMatches(companyGroup.records[0].id); // Assuming all records in a group have the same ID or can be derived
 
             return (
-              <Card key={submission.id} className="overflow-hidden">
+              <Card key={companyGroup.companyName} className="overflow-hidden">
                 <CardHeader 
                   className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => setExpandedStartup(isExpanded ? null : submission.companyName)}
+                  onClick={() => setExpandedStartup(isExpanded ? null : companyGroup.companyName)}
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-4">
@@ -523,17 +627,14 @@ export default function AdminClientManagement() {
                         <ChevronRight className="h-5 w-5 text-gray-400" />
                       )}
                       <div className="flex-1">
-                        <CardTitle className="text-lg">{submission.companyName}</CardTitle>
+                        <CardTitle className="text-lg">{companyGroup.companyName}</CardTitle>
                         <CardDescription className="flex items-center space-x-4">
                           <span className="flex items-center">
                             <Mail className="h-4 w-4 mr-1" />
-                            {submission.email}
+                            {companyGroup.emails.length} emails
                           </span>
-                          {submission.contactName && (
-                            <span className="flex items-center">
-                              <Users className="h-4 w-4 mr-1" />
-                              {submission.contactName}
-                            </span>
+                          {companyGroup.hasActiveAccount && (
+                            <Badge variant="default" className="text-green-800 bg-green-100">Active</Badge>
                           )}
                         </CardDescription>
                       </div>
@@ -557,7 +658,7 @@ export default function AdminClientManagement() {
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            startAddMatch(submission);
+                            startAddMatch(companyGroup.records[0]); // Assuming all records in a group have the same ID or can be derived
                           }}
                         >
                           <Link className="h-4 w-4" />
@@ -567,7 +668,7 @@ export default function AdminClientManagement() {
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            startEditCompany(submission);
+                            startEditCompany(companyGroup.records[0]); // Assuming all records in a group have the same ID or can be derived
                           }}
                         >
                           <Edit className="h-4 w-4" />
@@ -577,11 +678,49 @@ export default function AdminClientManagement() {
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteCompany(submission);
+                            deleteCompany(companyGroup.records[0]); // Assuming all records in a group have the same ID or can be derived
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        {/* Add Run Matching Button */}
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            runMatching(companyGroup.records[0].id.toString());
+                          }}
+                          disabled={isRunningMatch}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {isRunningMatch ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                              Running...
+                            </>
+                          ) : (
+                            <>
+                              <Target className="h-4 w-4 mr-1" />
+                              Run Matching
+                            </>
+                          )}
+                        </Button>
+                        {/* Add Status Indicator */}
+                        {matchingStatus[companyGroup.records[0].id.toString()] && (
+                          <Badge 
+                            className={
+                              matchingStatus[companyGroup.records[0].id.toString()] === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : matchingStatus[companyGroup.records[0].id.toString()] === 'running'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-red-100 text-red-800'
+                            }
+                          >
+                            {matchingStatus[companyGroup.records[0].id.toString()] === 'completed' ? '✓ Complete' :
+                             matchingStatus[companyGroup.records[0].id.toString()] === 'running' ? '⏳ Running' : '✗ Error'}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -593,19 +732,19 @@ export default function AdminClientManagement() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-white rounded-lg">
                       <div>
                         <label className="text-sm font-medium text-gray-600">Sector</label>
-                        <p className="text-sm">{submission.sector || 'Not specified'}</p>
+                        <p className="text-sm">{companyGroup.records[0].sector || 'Not specified'}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-600">Stage</label>
-                        <p className="text-sm">{submission.stage || 'Not specified'}</p>
+                        <p className="text-sm">{companyGroup.records[0].stage || 'Not specified'}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-600">Funding Goal</label>
-                        <p className="text-sm">{submission.fundingGoal || 'Not specified'}</p>
+                        <p className="text-sm">{companyGroup.records[0].fundingGoal || 'Not specified'}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-600">Phone</label>
-                        <p className="text-sm">{submission.phone || 'Not specified'}</p>
+                        <p className="text-sm">{companyGroup.records[0].phone || 'Not specified'}</p>
                       </div>
                     </div>
 
@@ -615,7 +754,7 @@ export default function AdminClientManagement() {
                         <h4 className="font-medium">VC Matches ({startupMatches.length})</h4>
                         <Button
                           size="sm"
-                          onClick={() => startAddMatch(submission)}
+                          onClick={() => startAddMatch(companyGroup.records[0])}
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add Match
@@ -628,7 +767,7 @@ export default function AdminClientManagement() {
                           <Button
                             variant="outline"
                             className="mt-4"
-                            onClick={() => startAddMatch(submission)}
+                            onClick={() => startAddMatch(companyGroup.records[0])}
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Add First Match
@@ -702,7 +841,7 @@ export default function AdminClientManagement() {
           })}
         </div>
 
-        {filteredSubmissions.length === 0 && (
+        {companies.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
               <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />

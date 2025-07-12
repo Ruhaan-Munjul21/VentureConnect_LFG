@@ -2,15 +2,8 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 export default function Hero() {
-  const scrollToWaitlist = () => {
-    const element = document.getElementById('waitlist');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const handleTryBeta = () => {
-    window.open('http://localhost:5000/get-matched', '_blank');
+  const handleGetMatched = () => {
+    window.open('http://localhost:3000/get-matched', '_blank');
   };
 
   return (
@@ -51,19 +44,11 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             <Button 
-              onClick={handleTryBeta}
+              onClick={handleGetMatched}
               className="bg-gradient-to-r from-accent to-accent-purple text-accent-foreground px-8 py-4 text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
               size="lg"
             >
-              Try Beta - Get Matched Now
-            </Button>
-            <Button 
-              onClick={scrollToWaitlist}
-              variant="outline"
-              className="border-2 border-accent text-accent px-8 py-4 text-lg hover:bg-accent hover:text-accent-foreground transition-all duration-200"
-              size="lg"
-            >
-              Join Waitlist
+              Get Matched
             </Button>
           </motion.div>
           
@@ -74,10 +59,10 @@ export default function Hero() {
             animate={{ opacity: 0.6 }}
             transition={{ duration: 0.6, delay: 0.6 }}
           >
-            <span className="text-sm font-medium text-muted-foreground">Trusted by 100+ biotech startups</span>
+            <span className="text-sm font-medium text-muted-foreground">Connecting biotech startups with the right VCs</span>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-muted-foreground">$50M+ in funding facilitated</span>
+              <span className="text-sm text-muted-foreground">Streamlining biotech-VC matchmaking</span>
             </div>
           </motion.div>
 
@@ -89,9 +74,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.8 }}
           >
             <div className="inline-flex items-center bg-white/90 rounded-full px-6 py-3 shadow-lg">
-              <div className="w-8 h-8 bg-gradient-to-r from-accent to-accent-purple rounded-full flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">WBV</span>
-              </div>
+              <img src="/images/westfield.png" alt="Westfield Bio Ventures" className="w-8 h-8 rounded-full object-contain mr-3 bg-white border border-gray-200" />
               <span className="text-sm font-medium text-muted-foreground">
                 Backed by <span className="text-primary font-semibold">WestField Bio Ventures</span>
               </span>
@@ -101,16 +84,7 @@ export default function Hero() {
       </div>
       
       {/* Hero image */}
-      <div className="absolute bottom-10 right-10 hidden lg:block">
-        <motion.img 
-          src="https://images.unsplash.com/photo-1582719471384-894fbb16e074?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" 
-          alt="Biotech laboratory research" 
-          className="rounded-2xl shadow-2xl w-80 h-60 object-cover opacity-80"
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 0.8, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-        />
-      </div>
+      {/* Removed the scientist/lab image and its container for a cleaner layout */}
     </section>
   );
 }

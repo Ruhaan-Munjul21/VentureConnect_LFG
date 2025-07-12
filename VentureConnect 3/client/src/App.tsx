@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Team from "@/pages/team";
+import Contact from "@/pages/contact";
 import GetMatched from "@/pages/get-matched";
 import AdminDashboard from "@/pages/admin";
 import AdminClientManagement from "@/pages/admin-client-management";
@@ -16,10 +17,15 @@ import ClientDashboard from "@/pages/client-dashboard";
 import VCTimeline from "@/pages/vc-timeline";
 
 function Router() {
+  console.log('=== ROUTER DEBUG ===');
+  console.log('Current location:', window.location.pathname);
+  console.log('Available routes: /, /team, /contact, /get-matched, /admin, /admin/clients, /airtable-test, /client-test, /client/login, /client/dashboard, /client-portal, /test, /vc-timeline');
+  
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/team" component={Team} />
+      <Route path="/contact" component={Contact} />
       <Route path="/get-matched" component={GetMatched} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/clients" component={AdminClientManagement} />
@@ -28,6 +34,7 @@ function Router() {
       <Route path="/client/login" component={ClientLogin} />
       <Route path="/client/dashboard" component={ClientDashboard} />
       <Route path="/client-portal" component={() => { window.location.href = '/client/dashboard'; return null; }} />
+      <Route path="/test" component={() => <div>Test route works!</div>} />
       <Route path="/vc-timeline" component={VCTimeline} />
       <Route component={NotFound} />
     </Switch>

@@ -1,5 +1,3 @@
-import { GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
 import { useState, useEffect, useRef } from 'react';
 
 export default function GetMatched() {
@@ -98,14 +96,9 @@ export default function GetMatched() {
               alert('Form submitted successfully! You can now sign in with your email to access your dashboard.');
               window.location.href = '/client/login';
             } else {
-              // User was authenticated - check form status and redirect accordingly
-              checkFormStatus();
-              
-              // If form is now complete, redirect to dashboard
-              if (responseData.data && responseData.data.updated) {
+              // User was authenticated - redirect to dashboard to see updated state
                 console.log('Form updated successfully, redirecting to dashboard');
                 window.location.href = '/client/dashboard';
-              }
             }
           } else {
             console.error('Failed to process form submission');
@@ -181,62 +174,20 @@ export default function GetMatched() {
         const data = await response.json();
         setFormStatus(data.data);
         
-        // If form is complete, redirect to client portal
-        if (data.data.isComplete) {
-          window.location.href = '/client/dashboard';
-        }
+        // In the simplified flow, we don't redirect based on form completion
+        // Users can always access the dashboard and see the appropriate state
       }
     } catch (error) {
       console.error('Error checking form status:', error);
     }
   };
 
-  // Handle Google login
-  async function handleGoogleLoginSuccess(credentialResponse: any) {
-    if (!credentialResponse.credential) {
-      console.error('Google sign-in failed: No credential');
-      return;
-    }
-    const decoded: any = jwtDecode(credentialResponse.credential);
-    setUser(decoded);
-    localStorage.setItem('googleUser', JSON.stringify(decoded));
-    // Send to backend for session/cookie
-    const resp = await fetch('/api/client/oauth-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: decoded.email,
-        name: decoded.name,
-        googleUserId: decoded.sub
-      })
-    });
-    const data = await resp.json();
-    if (data.success && data.token) {
-      localStorage.setItem('clientToken', data.token);
-      // Immediately check form status
-      const statusResp = await fetch('/api/client/form-status', {
-        headers: { 'Authorization': `Bearer ${data.token}` }
-      });
-      if (statusResp.ok) {
-        const statusData = await statusResp.json();
-        if (statusData.data && statusData.data.isComplete) {
-          window.location.href = '/client/dashboard';
-        } else {
-          window.location.href = '/get-matched';
-        }
-      } else {
-        console.error('Failed to check form status');
-      }
-    } else {
-      console.error(data.message || 'Google login failed');
-    }
-  }
+
 
   function handleLogout() {
     setUser(null);
     setFormStatus(null);
     localStorage.removeItem('clientUser');
-    localStorage.removeItem('googleUser');
     localStorage.removeItem('clientToken');
   }
 
@@ -300,26 +251,9 @@ export default function GetMatched() {
         </button>
         
         <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
-          <h2 className="text-2xl font-bold mb-6 text-center">Sign in to Try Beta</h2>
+          <h2 className="text-2xl font-bold mb-6 text-center">Sign in to Access Beta</h2>
           
-          {/* Google Login */}
-          <div className="mb-6">
-            <GoogleLogin
-              onSuccess={handleGoogleLoginSuccess}
-              onError={() => console.error('Google sign-in failed')}
-            />
-          </div>
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
-            </div>
-          </div>
-
-          {/* Redirect to client login page */}
+          {/* Email Login */}
           <div className="text-center">
             <p className="text-gray-600 mb-4">
               Sign in with your email and password to access the form

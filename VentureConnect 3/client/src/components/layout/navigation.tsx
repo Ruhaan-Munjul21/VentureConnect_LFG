@@ -30,8 +30,8 @@ export default function Navigation() {
     }
   };
 
-  const handleTryBeta = () => {
-    window.open('http://localhost:5000/get-matched', '_blank');
+  const handleGetMatched = () => {
+    window.open('http://localhost:3000/get-matched', '_blank');
   };
 
   return (
@@ -40,7 +40,10 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link href="/">
-              <h1 className="text-2xl font-bold text-primary cursor-pointer hover:text-accent transition-colors">VentriLinks</h1>
+              <span className="flex items-center cursor-pointer">
+                <img src="/images/1.png" alt="VentriLinks Logo" className="h-14 w-14 mr-2 rounded-full bg-white border border-gray-200 object-cover" style={{minWidth:'56px', objectPosition:'center'}} />
+                <h1 className="text-2xl font-bold text-primary hover:text-accent transition-colors">VentriLinks</h1>
+              </span>
             </Link>
           </div>
           
@@ -58,23 +61,16 @@ export default function Navigation() {
               >
                 Features
               </button>
-              <button 
-                onClick={() => handleSectionClick('testimonials')} 
-                className="text-muted-foreground hover:text-accent transition-colors duration-200"
-              >
-                Testimonials
-              </button>
               <Link href="/team">
                 <span className="text-muted-foreground hover:text-accent transition-colors duration-200 cursor-pointer">
                   Team
                 </span>
               </Link>
-              <button 
-                onClick={() => handleSectionClick('contact')} 
-                className="text-muted-foreground hover:text-accent transition-colors duration-200"
-              >
-                Contact
-              </button>
+              <Link href="/contact">
+                <span className="text-muted-foreground hover:text-accent transition-colors duration-200 cursor-pointer">
+                  Contact
+                </span>
+              </Link>
             </div>
           </div>
           
@@ -85,17 +81,10 @@ export default function Navigation() {
               </Button>
             </Link>
             <Button 
-              onClick={handleTryBeta}
+              onClick={handleGetMatched}
               className="bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-lg"
             >
-              Try Beta
-            </Button>
-            <Button 
-              onClick={() => handleSectionClick('waitlist')}
-              variant="outline"
-              className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-            >
-              Join Waitlist
+              Get Matched
             </Button>
           </div>
           
@@ -127,23 +116,16 @@ export default function Navigation() {
               >
                 Features
               </button>
-              <button 
-                onClick={() => handleSectionClick('testimonials')} 
-                className="block px-3 py-2 text-muted-foreground hover:text-accent"
-              >
-                Testimonials
-              </button>
               <Link href="/team">
                 <span className="block px-3 py-2 text-muted-foreground hover:text-accent cursor-pointer">
                   Team
                 </span>
               </Link>
-              <button 
-                onClick={() => handleSectionClick('contact')} 
-                className="block px-3 py-2 text-muted-foreground hover:text-accent"
-              >
-                Contact
-              </button>
+              <Link href="/contact">
+                <span className="block px-3 py-2 text-muted-foreground hover:text-accent cursor-pointer">
+                  Contact
+                </span>
+              </Link>
               <div className="px-3 py-2 space-y-2">
                 <Link href="/client/login">
                   <Button variant="ghost" className="w-full text-muted-foreground hover:text-accent" size="sm">
@@ -151,19 +133,11 @@ export default function Navigation() {
                   </Button>
                 </Link>
                 <Button 
-                  onClick={handleTryBeta}
+                  onClick={handleGetMatched}
                   className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white"
                   size="sm"
                 >
-                  Try Beta
-                </Button>
-                <Button 
-                  onClick={() => handleSectionClick('waitlist')}
-                  variant="outline"
-                  className="w-full border-accent text-accent"
-                  size="sm"
-                >
-                  Join Waitlist
+                  Get Matched
                 </Button>
               </div>
             </div>

@@ -24,11 +24,11 @@ import {
   LogOut,
   Loader2,
   CheckCircle,
-  Clock,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
+import { useRef } from 'react';
+
 
 interface VCInvestor {
   id: number;
@@ -60,8 +60,11 @@ interface ClientMatch {
   isUnlocked: boolean;
   assignedAt: string;
   notes?: string;
+  vcName?: string; // Add vcName field from backend
   vcInvestor: VCInvestor;
   progress?: OutreachProgress;
+  matchReasoning?: string; // Add matchReasoning field
+  portfolioReasoning?: string; // Add portfolioReasoning field
 }
 
 interface ClientProfile {
@@ -84,7 +87,81 @@ const STATUS_OPTIONS = [
   { value: 'deal_closed', label: 'Deal Closed', color: 'bg-green-100 text-green-800' },
 ];
 
+// CountdownTimer component
+const CountdownTimer = ({ submissionTime }: { submissionTime: string }) => {
+  const [timeRemaining, setTimeRemaining] = useState('');
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeRemaining = () => {
+      const submission = new Date(submissionTime);
+      const now = new Date();
+      const twentyFourHoursLater = new Date(submission.getTime() + 24 * 60 * 60 * 1000);
+      const timeDiff = twentyFourHoursLater.getTime() - now.getTime();
+
+      if (timeDiff <= 0) {
+        setIsExpired(true);
+        setTimeRemaining('00:00:00');
+        return;
+      }
+
+      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      setTimeRemaining(
+        `${hours.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    };
+
+    calculateTimeRemaining();
+    const interval = setInterval(calculateTimeRemaining, 1000);
+    return () => clearInterval(interval);
+  }, [submissionTime]);
+
+  return (
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+      <div className="text-center">
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">
+          Processing Your Matches
+        </h3>
+        <p className="text-blue-700 mb-4">
+          Our AI is analyzing thousands of VCs to find your perfect matches
+        </p>
+        {!isExpired ? (
+          <div className="bg-white rounded-lg p-4 border border-blue-300">
+            <p className="text-sm text-blue-600 mb-2">Time remaining:</p>
+            <div className="text-3xl font-mono font-bold text-blue-900">
+              {timeRemaining}
+            </div>
+            <p className="text-xs text-blue-500 mt-2">
+              Results will be ready within 24 hours
+            </p>
+          </div>
+        ) : (
+          <div className="bg-green-100 rounded-lg p-4 border border-green-300">
+            <p className="text-green-800 font-semibold">
+              ✅ Processing Complete! Check your matches below.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function ClientDashboard() {
+  console.log('=== CLIENT DASHBOARD COMPONENT LOADED ===');
+  console.log('Dashboard component rendering...');
+  
+  // Move modal state hooks to the top
+  const [reasoningModalOpen, setReasoningModalOpen] = useState(false);
+  const [currentReasoning, setCurrentReasoning] = useState<string | null>(null);
+  const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
+  const [currentPortfolioReasoning, setCurrentPortfolioReasoning] = useState<string | null>(null);
+
   const [, setLocation] = useLocation();
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [matches, setMatches] = useState<ClientMatch[]>([]);
@@ -94,43 +171,69 @@ export default function ClientDashboard() {
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [updatingProgress, setUpdatingProgress] = useState(false);
   const [user, setUser] = useState(() => {
+    console.log('=== INITIALIZING USER STATE ===');
+    try {
     const stored = localStorage.getItem('clientUser');
-    return stored ? JSON.parse(stored) : null;
-  });
-  const [formComplete, setFormComplete] = useState<boolean | null>(null);
-
-  // Remove login form and redirect if not authenticated
-  useEffect(() => {
-    if (!user) {
-      setLocation('/client/login');
-      return;
+      console.log('Stored user data:', stored);
+      const parsed = stored ? JSON.parse(stored) : null;
+      console.log('Parsed user data:', parsed);
+      return parsed;
+    } catch (err) {
+      console.error('Error parsing user data:', err);
+      return null;
     }
-    // Check form completion status
-    const checkFormStatus = async () => {
-      const token = localStorage.getItem('clientToken');
-      if (!token) {
+  });
+  
+  // Dashboard state management
+  const [submissionTime, setSubmissionTime] = useState<string | null>(null);
+  const [dashboardState, setDashboardState] = useState<'form-incomplete' | 'processing' | 'results-ready'>('form-incomplete');
+  const [formStatus, setFormStatus] = useState<any>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper: get core fields
+  const CORE_FIELDS = [
+    'Drug Modality',
+    'Disease Focus',
+    'Investment Stage',
+    'Geography',
+    'Investment Amount',
+  ];
+
+  // Helper: format time remaining
+  function formatTime(ms: number) {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  console.log('=== DASHBOARD STATE DEBUG ===');
+  console.log('User state:', user);
+  console.log('Dashboard state:', dashboardState);
+  console.log('Loading state:', loading);
+  console.log('Error state:', error);
+  console.log('Client token:', localStorage.getItem('clientToken'));
+  console.log('Client user:', localStorage.getItem('clientUser'));
+
+    // Check authentication - NO VERIFICATION GATES
+  useEffect(() => {
+      console.log('=== DASHBOARD AUTH CHECK ===');
+      console.log('User state:', user);
+      console.log('Client token:', localStorage.getItem('clientToken'));
+      console.log('Client user:', localStorage.getItem('clientUser'));
+      
+    if (!user) {
+        console.log('❌ No user state, redirecting to login');
         setLocation('/client/login');
         return;
       }
-      try {
-        const res = await fetch('/api/client/form-status', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (!data.data.isComplete) {
-            setLocation('/get-matched');
-          } else {
-            setFormComplete(true);
-          }
-        } else {
-          setLocation('/get-matched');
-        }
-      } catch {
-        setLocation('/get-matched');
-      }
-    };
-    checkFormStatus();
+      
+      console.log('✅ User authenticated, checking dashboard state...');
+      // User is authenticated - DIRECT ACCESS to dashboard
+      // No form verification, no gates, just check state
+      checkDashboardState();
   }, [user, setLocation]);
 
   const loadDashboardData = async () => {
@@ -139,6 +242,7 @@ export default function ClientDashboard() {
 
     try {
       setLoading(true);
+        console.log('Loading dashboard data...');
       const [profileRes, matchesRes] = await Promise.all([
         fetch('/api/client/profile', {
           headers: { Authorization: `Bearer ${token}` }
@@ -150,51 +254,207 @@ export default function ClientDashboard() {
 
       if (profileRes.ok) {
         const profileData = await profileRes.json();
+          console.log('Profile data loaded:', profileData.data);
+          console.log('=== PROFILE API RESPONSE DEBUG ===');
+          console.log('Profile response status:', profileRes.status);
+          console.log('Profile response headers:', profileRes.headers);
+          console.log('Profile raw data:', profileData);
+          console.log('Profile data type:', typeof profileData);
+          console.log('Profile data keys:', Object.keys(profileData || {}));
+          console.log('Profile data.data keys:', Object.keys(profileData.data || {}));
+          console.log('Profile company name:', profileData.data?.companyName);
+          console.log('Profile email:', profileData.data?.email);
         setProfile(profileData.data);
+        } else {
+          console.log('Profile request failed:', profileRes.status);
+          console.log('Profile error response:', await profileRes.text());
       }
 
       if (matchesRes.ok) {
         const matchesData = await matchesRes.json();
+        console.log('Matches data loaded:', matchesData.data);
+        // DEBUG: Log the first match object to check for portfolioReasoning
+        if (matchesData.data && matchesData.data.length > 0) {
+          console.log('First match object:', matchesData.data[0]);
+          // === MATCH OBJECT DETAILED DEBUG ===
+          console.log("=== MATCH OBJECT DETAILED DEBUG ===");
+          console.log("Full match object:", JSON.stringify(matchesData.data[0], null, 2));
+          console.log("Match object keys:", Object.keys(matchesData.data[0]));
+          console.log("Match Reasoning field:", matchesData.data[0]["Match Reasoning"]);
+          console.log("Match Reasoning (Portfolio) field:", matchesData.data[0]["Match Reasoning (Portfolio)"]);
+          console.log("All fields containing 'reasoning':", 
+            Object.keys(matchesData.data[0]).filter(key => 
+              key.toLowerCase().includes('reasoning')
+            )
+          );
+        }
         setMatches(matchesData.data);
+      } else {
+        console.log('Matches request failed:', matchesRes.status);
       }
     } catch (err) {
+        console.error('Failed to load dashboard data:', err);
       setError('Failed to load dashboard data');
     } finally {
+        console.log('Setting loading to false after loading data');
       setLoading(false);
     }
   };
 
-  // Load dashboard data when user is authenticated and form is complete
-  useEffect(() => {
-    if (user && formComplete) {
+    // Update checkDashboardState to store formStatus and handle timer
+    const checkDashboardState = async () => {
+      console.log('=== CHECKING DASHBOARD STATE ===');
+      const token = localStorage.getItem('clientToken');
+      console.log('Token available:', !!token);
+      
+      if (!token) {
+        console.log('❌ No token found, cannot check dashboard state');
+        setError('No authentication token found. Please log in again.');
+        setLoading(false); // Set loading to false on error
+        return;
+      }
+
+      try {
+        console.log('Fetching form status from /api/client/form-status...');
+        const res = await fetch('/api/client/form-status', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('Form status response:', res);
+        const data = await res.json();
+        setFormStatus(data.data); // Store form status for later
+        console.log('Form status data:', data);
+        console.log('Form completion status:', data.data?.isComplete);
+        console.log('Form completion time:', data.data?.completionTime);
+        console.log('Submission time:', data.data?.submissionTime);
+        
+        // Store submission time for timer
+        if (data.data?.submissionTime) {
+          setSubmissionTime(data.data.submissionTime);
+        }
+        
+        // ADD DEBUGGING LOGS FOR FORM STATUS API RESPONSE
+        console.log("=== FORM STATUS API RESPONSE DEBUG ===");
+        console.log("Raw response:", res);
+        console.log("Response status:", res.status);
+        console.log("Response headers:", res.headers);
+        console.log("Parsed data:", data);
+        console.log("Data type:", typeof data);
+        console.log("Data keys:", Object.keys(data || {}));
+        console.log("Data.data keys:", Object.keys(data.data || {}));
+        
+        if (res.ok) {
+          if (!data.data.isComplete) {
+            // Check core fields
+            const missingCore = CORE_FIELDS.filter(f => (data.data.missingFields || []).includes(f));
+            console.log('Missing core fields:', missingCore);
+            if (missingCore.length === 0) {
+              // All core fields filled, hide form
+              setDashboardState('results-ready');
+            } else {
+              setDashboardState('form-incomplete');
+            }
+            loadDashboardData();
+          } else {
+            // Form is complete, check 24-hour timer using submissionTime
+            const submissionTime = data.data.submissionTime;
+            if (submissionTime) {
+              const now = new Date();
+              const submission = new Date(submissionTime);
+              const twentyFourHoursLater = new Date(submission.getTime() + 24 * 60 * 60 * 1000);
+              
+              if (now < twentyFourHoursLater) {
+                // Less than 24 hours, show processing state
+                setDashboardState('processing');
+              } else {
+                // More than 24 hours, show results
+                setDashboardState('results-ready');
+              }
+            } else {
+              // No submission time, show results
+              setDashboardState('results-ready');
+            }
+            loadDashboardData();
+          }
+        } else {
+          // If form status check fails, default to form-needed (NO GATE)
+          console.log('Form status check failed, defaulting to form-needed');
+          setDashboardState('form-incomplete');
+          setError(data.message || 'Failed to check form status');
+          // Load profile data even on error
       loadDashboardData();
     }
-  }, [user, formComplete]);
+      } catch (error) {
+        console.error('Error checking dashboard state:', error);
+        let errorMsg = 'Unknown error';
+        if (error && typeof error === 'object' && 'message' in error) {
+          errorMsg = (error as Error).message;
+        } else if (typeof error === 'string') {
+          errorMsg = error;
+        }
+        setError('Error checking dashboard state: ' + errorMsg);
+        // On error, default to form-needed (NO GATE)
+        setDashboardState('form-incomplete');
+        // Load profile data even on error
+        loadDashboardData();
+      } finally {
+        // Always set loading to false after checking dashboard state
+        console.log('Setting loading to false');
+        setLoading(false);
+      }
+    };
+
+    // Add timer effect for countdown
+    useEffect(() => {
+      if (dashboardState === 'processing' && timeRemaining !== null) {
+        const interval = setInterval(() => {
+          setTimeRemaining(prev => {
+            if (prev === null) return null;
+            if (prev <= 1000) {
+              setDashboardState('results-ready');
+              clearInterval(interval);
+              return null;
+            }
+            return prev - 1000;
+          });
+        }, 1000);
+        return () => clearInterval(interval);
+      }
+    }, [dashboardState, timeRemaining]);
 
   function handleLogout() {
     setUser(null);
     localStorage.removeItem('clientUser');
-    localStorage.removeItem('googleUser');
     localStorage.removeItem('clientToken');
     setLocation('/client/login');
   }
 
-  if (!user || formComplete === null) {
-    // Show nothing or a loading spinner while checking auth/form status
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-        <p>Loading...</p>
-      </div>
-    );
-  }
+    if (!user) {
+      console.log('🚨 No user found, redirecting to login');
+      return null;
+    }
+
+    // Remove the early return for form-incomplete - let it render normally
+    console.log('⏳ Dashboard state: form-incomplete - will render UI');
 
   if (loading) {
+      console.log('⏳ Data loading...');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
           <p>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+    if (error) {
+      console.log('❌ Dashboard error:', error);
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-red-50">
+          <div className="text-center">
+            <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+            <p className="text-red-700">{error}</p>
         </div>
       </div>
     );
@@ -226,19 +486,26 @@ export default function ClientDashboard() {
     }
   };
 
-  const getStatusStats = () => {
-    const stats = {
-      total: matches.length,
-      unlocked: matches.filter(m => m.isUnlocked).length,
-      contacted: matches.filter(m => m.progress?.status === 'contacted').length,
-      responded: matches.filter(m => m.progress?.status === 'responded').length,
-      meetings: matches.filter(m => m.progress?.status === 'meeting_scheduled').length,
-      deals: matches.filter(m => m.progress?.status === 'deal_closed').length,
-    };
-    return stats;
-  };
+    // Remove getStatusStats function and all stats-related code
 
-  const stats = getStatusStats();
+    // ADD DEBUGGING LOGS FOR RENDER
+    console.log('=== DASHBOARD RENDER DEBUG ===');
+    console.log('Profile state:', profile);
+    console.log('Profile company name:', profile?.companyName);
+    console.log('Profile email:', profile?.email);
+    console.log('Dashboard state:', dashboardState);
+    console.log('Loading state:', loading);
+    console.log('Error state:', error);
+
+    function openMatchReasoning(reasoning: string) {
+      setCurrentReasoning(reasoning);
+      setReasoningModalOpen(true);
+    }
+
+  function openPortfolioReasoning(reasoning: string) {
+    setCurrentPortfolioReasoning(reasoning);
+    setPortfolioModalOpen(true);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -247,7 +514,7 @@ export default function ClientDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Building2 className="h-8 w-8 text-blue-600 mr-3" />
+                <img src="/images/1.png" alt="VentriLinks Logo" className="h-14 w-14 object-cover rounded-full mr-3 bg-white border border-gray-200" style={{objectPosition:'center'}} />
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">VentriLinks Client Portal</h1>
                 {profile && (
@@ -255,10 +522,15 @@ export default function ClientDashboard() {
                 )}
               </div>
             </div>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" onClick={() => window.location.href = '/'}>
+                  Back to Main Site
+                </Button>
             <Button variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
+              </div>
           </div>
         </div>
       </header>
@@ -270,190 +542,155 @@ export default function ClientDashboard() {
           </Alert>
         )}
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <Target className="h-8 w-8 text-blue-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-sm text-gray-600">Total Matches</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <Unlock className="h-8 w-8 text-green-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.unlocked}</p>
-                  <p className="text-sm text-gray-600">Unlocked</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <Mail className="h-8 w-8 text-blue-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.contacted}</p>
-                  <p className="text-sm text-gray-600">Contacted</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <MessageSquare className="h-8 w-8 text-yellow-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.responded}</p>
-                  <p className="text-sm text-gray-600">Responded</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <Calendar className="h-8 w-8 text-purple-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.meetings}</p>
-                  <p className="text-sm text-gray-600">Meetings</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <CheckCircle className="h-8 w-8 text-green-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.deals}</p>
-                  <p className="text-sm text-gray-600">Deals</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Matches Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {matches.map((match) => (
-            <Card key={match.id} className="hover:shadow-lg transition-shadow">
+          {/* Startup Profile Information */}
+          {profile && (
+            <Card className="mb-6">
               <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{match.vcInvestor?.name || "Unknown VC"}</CardTitle>
-                    <CardDescription>{match.vcInvestor?.firm || ""}</CardDescription>
-                  </div>
-                  <Badge variant={match.isUnlocked ? "default" : "secondary"}>
-                    {match.isUnlocked ? (
-                      <>
-                        <Unlock className="h-3 w-3 mr-1" />
-                        Unlocked
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-3 w-3 mr-1" />
-                        Teaser
-                      </>
-                    )}
-                  </Badge>
-                </div>
+                <CardTitle className="flex items-center">
+                  <img src="/images/1.png" alt="VentriLinks Logo" className="h-10 w-10 object-cover rounded-full mr-2 bg-white border border-gray-200" style={{objectPosition:'center'}} />
+                  Startup Information
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">Investment Focus</p>
-                  <p className="text-sm">{match.vcInvestor?.investmentFocus || 'Not specified'}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">Stage & Geography</p>
-                  <p className="text-sm">
-                    {match.vcInvestor?.investmentStage} • {match.vcInvestor?.geography}
-                  </p>
-                </div>
-
-                {match.progress && (
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">Status</p>
-                    <Badge 
-                      className={STATUS_OPTIONS.find(s => s.value === match.progress?.status)?.color}
-                    >
-                      {STATUS_OPTIONS.find(s => s.value === match.progress?.status)?.label}
-                    </Badge>
+                    <p className="text-sm font-medium text-gray-600">Company Name</p>
+                    <p className="text-lg">{profile.companyName}</p>
                   </div>
-                )}
-
-                {match.isUnlocked && (
-                  <div className="space-y-2">
-                    {match.vcInvestor?.email && (
-                      <div className="flex items-center text-sm">
-                        <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                        <a href={`mailto:${match.vcInvestor.email}`} className="text-blue-600 hover:underline">
-                          {match.vcInvestor.email}
-                        </a>
-                      </div>
-                    )}
-                    {match.vcInvestor?.phone && (
-                      <div className="flex items-center text-sm">
-                        <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                        <a href={`tel:${match.vcInvestor.phone}`} className="text-blue-600 hover:underline">
-                          {match.vcInvestor.phone}
-                        </a>
-                      </div>
-                    )}
-                    {match.vcInvestor?.linkedin && (
-                      <div className="flex items-center text-sm">
-                        <Linkedin className="h-4 w-4 mr-2 text-gray-400" />
-                        <a href={match.vcInvestor.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                          LinkedIn
-                        </a>
-                      </div>
-                    )}
-                    {match.vcInvestor?.website && (
-                      <div className="flex items-center text-sm">
-                        <Globe className="h-4 w-4 mr-2 text-gray-400" />
-                        <a href={match.vcInvestor.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                          Website
-                        </a>
-                      </div>
-                    )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Email</p>
+                    <p className="text-lg">{profile.email}</p>
                   </div>
-                )}
-
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setLocation(`/vc-timeline?matchId=${match.id}`)}
-                  >
-                    View Timeline
-                  </Button>
-
-                  <Button 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedMatch(match);
-                      setProgressDialogOpen(true);
-                    }}
-                  >
-                    Update Progress
-                  </Button>
+                  {profile.sector && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Sector</p>
+                      <p className="text-lg">{profile.sector}</p>
+                      </div>
+                    )}
+                  {profile.stage && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Stage</p>
+                      <p className="text-lg">{profile.stage}</p>
+                      </div>
+                    )}
+                  {profile.fundingGoal && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Funding Goal</p>
+                      <p className="text-lg">{profile.fundingGoal}</p>
+                      </div>
+                    )}
+                  {profile.description && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm font-medium text-gray-600">Description</p>
+                      <p className="text-lg">{profile.description}</p>
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )}
+
+          {/* Dashboard State Content */}
+          {dashboardState === 'form-incomplete' && (
+            (() => {
+              console.log('🎯 RENDERING FORM-INCOMPLETE UI');
+              return (
+                <div className="text-center py-12">
+                  <div className="max-w-md mx-auto">
+                    <Target className="h-16 w-16 text-blue-600 mx-auto mb-6" />
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                      Ready to Find Your Matches?
+                    </h2>
+                    <p className="text-gray-600 mb-8">
+                      Fill out your startup details to get matched with the right investors.
+                    </p>
+                    {/* Show missing core fields */}
+                    {formStatus && (
+                      <div className="mb-4">
+                        <div className="font-semibold text-red-700">Missing Core Fields:</div>
+                        <ul className="text-red-600">
+                          {CORE_FIELDS.filter(f => (formStatus.missingFields || []).includes(f)).map(f => (
+                            <li key={f}>{f}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                      <Button 
+                      onClick={() => window.location.href = '/get-matched'}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
+                      >
+                      Fill Out Startup Form
+                      </Button>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+
+          {dashboardState === 'processing' && submissionTime && (
+            <CountdownTimer submissionTime={submissionTime} />
+          )}
+
+          {dashboardState === 'results-ready' && (
+            <>
+              {/* Matches Grid */}
+              <div className="matches-grid grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto p-5">
+                {matches.map((match) => {
+                  // === RENDERING MATCH REASONING ===
+                  console.log("=== RENDERING MATCH REASONING ===");
+                  console.log("Profile reasoning:", match.matchReasoning || (match as any)["Match Reasoning"]);
+                  console.log("Portfolio reasoning:", match.portfolioReasoning || (match as any)["Match Reasoning (Portfolio)"]);
+                  return (
+                    <Card key={match.id} className="hover:shadow-lg transition-shadow">
+                      <CardContent>
+                        <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
+                          <h3 className="text-lg font-bold mb-1">{match.vcInvestor?.name || match.vcName || "Unknown VC"}</h3>
+                          <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
+                          <div className="match-info mb-3">
+                            <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
+                            <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
+                            <p>Geography: {match.vcInvestor?.geography || "US"}</p>
+                          </div>
+                          <div className="match-actions flex gap-4 items-center">
+                            {match.matchReasoning && (
+                              <a
+                                href="#"
+                                onClick={e => { e.preventDefault(); openMatchReasoning(match.matchReasoning!); }}
+                                className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
+                              >
+                                <span>🧬</span> Why this match?
+                              </a>
+                            )}
+                            {match.portfolioReasoning && (
+                              <a
+                                href="#"
+                                onClick={e => { e.preventDefault(); openPortfolioReasoning(match.portfolioReasoning!); }}
+                                className="text-green-700 hover:underline text-sm font-medium flex items-center gap-1"
+                              >
+                                <span>📊</span> Portfolio Analysis
+                              </a>
+                            )}
+                          </div>
+                  </div>
+                </CardContent>
+              </Card>
+                );
+              })}
         </div>
+            </>
+          )}
+
+          {dashboardState === 'results-ready' && matches.length === 0 && (
+            <Card className="text-center py-12">
+              <CardContent>
+                <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No matches yet</h3>
+                <p className="text-gray-600">
+                  Your VentriLinks team will assign VC matches to your company soon.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
         {matches.length === 0 && (
           <Card className="text-center py-12">
@@ -549,6 +786,40 @@ export default function ClientDashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+        {/* Match Reasoning Modal */}
+        <Dialog open={reasoningModalOpen} onOpenChange={setReasoningModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Why this match?</DialogTitle>
+            </DialogHeader>
+            <div className="text-blue-900 whitespace-pre-line text-base leading-relaxed">
+              {currentReasoning}
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button variant="secondary" onClick={() => setReasoningModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+        </DialogContent>
+      </Dialog>
+
+        {/* Portfolio Reasoning Modal */}
+        <Dialog open={portfolioModalOpen} onOpenChange={setPortfolioModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Why we matched you based on our portfolio analysis</DialogTitle>
+            </DialogHeader>
+            <div className="text-green-900 whitespace-pre-line text-base leading-relaxed">
+              {currentPortfolioReasoning}
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button variant="secondary" onClick={() => setPortfolioModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
     </div>
   );
 } 

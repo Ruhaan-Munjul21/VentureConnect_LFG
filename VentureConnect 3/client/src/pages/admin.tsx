@@ -107,6 +107,121 @@ export default function AdminDashboard() {
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCompany, setExpandedCompany] = useState(null);
+  
+  // Add matching state
+  const [isRunningMatch, setIsRunningMatch] = useState(false);
+  const [selectedStartups, setSelectedStartups] = useState([]);
+  const [matchingStatus, setMatchingStatus] = useState({});
+
+  // Add debug console logs
+  console.log("=== ADMIN COMPONENT LOADED ===");
+  console.log("Submissions data:", submissions);
+  console.log("Active tab:", activeTab);
+  console.log("Selected startups:", selectedStartups);
+  console.log("Matching status:", matchingStatus);
+
+  // Add runMatching function
+  const runMatching = async (startupId) => {
+    console.log("Running matching for startup:", startupId);
+    setIsRunningMatch(true);
+    setMatchingStatus(prev => ({ ...prev, [startupId]: 'running' }));
+    
+    try {
+      // Step 1: Update the "Run Match" field to checked
+      const updateResponse = await fetch('/api/admin/update-startup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startupId: startupId,
+          runMatch: true
+        })
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update startup');
+      }
+      
+      // Step 2: Trigger the matching software
+      const matchingResponse = await fetch('/api/admin/run-matching', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startupId: startupId
+        })
+      });
+      
+      if (matchingResponse.ok) {
+        setMatchingStatus(prev => ({ ...prev, [startupId]: 'completed' }));
+        alert('Matching completed successfully!');
+        // Refresh the data
+        await loadData();
+      } else {
+        throw new Error('Failed to run matching');
+      }
+    } catch (error) {
+      console.error('Error running matching:', error);
+      setMatchingStatus(prev => ({ ...prev, [startupId]: 'error' }));
+      alert('Error running matching. Please try again.');
+    } finally {
+      setIsRunningMatch(false);
+    }
+  };
+
+  // Add batch matching function
+  const runBatchMatching = async () => {
+    if (selectedStartups.length === 0) {
+      alert('Please select at least one startup');
+      return;
+    }
+    
+    console.log("Running batch matching for:", selectedStartups);
+    setIsRunningMatch(true);
+    
+    try {
+      // Update all selected startups' "Run Match" field
+      const updateResponse = await fetch('/api/admin/batch-update-startups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startupIds: selectedStartups,
+          runMatch: true
+        })
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update startups');
+      }
+      
+      // Run matching for all selected
+      const matchingResponse = await fetch('/api/admin/batch-run-matching', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startupIds: selectedStartups
+        })
+      });
+      
+      if (matchingResponse.ok) {
+        // Update status for all selected startups
+        const newStatus = {};
+        selectedStartups.forEach(id => {
+          newStatus[id] = 'completed';
+        });
+        setMatchingStatus(prev => ({ ...prev, ...newStatus }));
+        
+        alert(`Matching completed for ${selectedStartups.length} startups!`);
+        setSelectedStartups([]);
+        await loadData();
+      } else {
+        throw new Error('Failed to run batch matching');
+      }
+    } catch (error) {
+      console.error('Error running batch matching:', error);
+      alert('Error running batch matching. Please try again.');
+    } finally {
+      setIsRunningMatch(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -310,14 +425,39 @@ export default function AdminDashboard() {
         {/* Submissions Tab */}
         {activeTab === 'submissions' && (
           <div className="space-y-6">
+            {/* Batch Selection Controls */}
             <div className="bg-white rounded-lg shadow p-6">
-              <input
-                type="text"
-                placeholder="Search submissions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="text"
+                    placeholder="Search submissions..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-600">
+                    {selectedStartups.length} selected
+                  </span>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setSelectedStartups([])}
+                    className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    Clear Selection
+                  </button>
+                  {selectedStartups.length > 0 && (
+                    <button
+                      onClick={runBatchMatching}
+                      disabled={isRunningMatch}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+                    >
+                      {isRunningMatch ? 'Running...' : `Run Matching (${selectedStartups.length})`}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -330,6 +470,20 @@ export default function AdminDashboard() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selectedStartups.length === filteredSubmissions.length && filteredSubmissions.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedStartups(filteredSubmissions.map(s => s.id));
+                            } else {
+                              setSelectedStartups([]);
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Startup Name</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Drug Modality</th>
@@ -337,12 +491,27 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment Stage</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Geography</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredSubmissions.map((submission) => (
                       <tr key={submission.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedStartups.includes(submission.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedStartups([...selectedStartups, submission.id]);
+                              } else {
+                                setSelectedStartups(selectedStartups.filter(id => id !== submission.id));
+                              }
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {submission.fields[SUBMISSION_FIELDS.STARTUP_NAME] || 'N/A'}
                         </td>
@@ -364,7 +533,30 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {submission.fields[SUBMISSION_FIELDS.INVESTMENT_AMOUNT] || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {matchingStatus[submission.id] ? (
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              matchingStatus[submission.id] === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : matchingStatus[submission.id] === 'running'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {matchingStatus[submission.id] === 'completed' ? '✓ Complete' :
+                               matchingStatus[submission.id] === 'running' ? '⏳ Running' : '✗ Error'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">Pending</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                          <button
+                            onClick={() => runMatching(submission.id)}
+                            disabled={isRunningMatch}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                          >
+                            {isRunningMatch ? 'Running...' : 'Run Matching'}
+                          </button>
                           <button
                             onClick={() => setSelectedSubmission(submission)}
                             className="text-blue-600 hover:text-blue-900"

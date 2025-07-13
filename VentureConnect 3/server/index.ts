@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -35,8 +36,8 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Removed: await seedData();
-    const server = await registerRoutes(app);
+    // Register routes on the app
+    registerRoutes(app);
     
     // Error handling middleware
     app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -48,10 +49,13 @@ app.use((req, res, next) => {
     
     // Setup Vite in development or serve static files in production
     if (app.get("env") === "development") {
-      await setupVite(app, server);
+      await setupVite(app);
     } else {
       serveStatic(app);
     }
+    
+    // Create HTTP server
+    const server = createServer(app);
     
     const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
     server.listen(port, "0.0.0.0", () => {

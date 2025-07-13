@@ -1,14 +1,22 @@
 import express, { type Express } from "express";
-import { createServer, type Server } from "http";
 import adminRoutes from "./admin";
 import clientRoutes from "./client";
 
-export function registerRoutes(app: Express): Server {
+export function registerRoutes(app: Express): void {
   // Register admin routes
   app.use("/api/admin", adminRoutes);
 
   // Register client routes
   app.use("/api/client", clientRoutes);
+
+  // Root endpoint for Railway health check
+  app.get("/", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      message: "VentureConnect API is running",
+      timestamp: new Date().toISOString() 
+    });
+  });
 
   // Health check endpoint
   app.get("/api/health", (req, res) => {
@@ -36,9 +44,4 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
-
-  // Create HTTP server
-  const server = createServer(app);
-
-  return server;
-}
+} 

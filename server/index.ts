@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -35,30 +36,55 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Removed: await seedData();
-    const server = await registerRoutes(app);
+    // Register routes on the app
+    registerRoutes(app);
+    console.log("Routes registered successfully");
     
     // Error handling middleware
     app.use((err: any, req: Request, res: Response, next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
       res.status(status).json({ message });
-      console.error(err);
+      console.error("Error middleware triggered:", err);
     });
     
     // Setup Vite in development or serve static files in production
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
+    if (process.env.NODE_ENV === "development") {
+      await setupVite(app);
     } else {
+      console.log("Setting up static file serving for production");
       serveStatic(app);
     }
     
-    const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-    server.listen(port, "localhost", () => {
-      log(`serving on port ${port}`);
+    // Use Railway's PORT, fallback to 8080
+    const port = parseInt(process.env.PORT || "8080");
+    const host = "0.0.0.0"; // CRITICAL: Must be 0.0.0.0 for Railway
+    
+    console.log(`Starting server on ${host}:${port}`);
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`PORT from env: ${process.env.PORT}`);
+    
+    // Create server and listen
+    const server = createServer(app);
+    
+    server.listen(port, host, () => {
+      console.log(`✅ Server successfully listening on ${host}:${port}`);
+      console.log(`🚀 App should be accessible at your Railway URL`);
     });
+    
+    // Add error handling for server
+    server.on('error', (error) => {
+      console.error('❌ Server error:', error);
+    });
+    
+    // Log incoming requests for debugging
+    app.use((req, res, next) => {
+      console.log(`📨 Incoming request: ${req.method} ${req.path}`);
+      next();
+    });
+    
   } catch (error) {
-    console.error("Failed to start server:", error);
+    console.error("❌ Failed to start server:", error);
     process.exit(1);
   }
 })();

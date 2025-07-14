@@ -1,13 +1,6 @@
 import express, { type Express } from "express";
-import adminRoutes from "./admin";
-import clientRoutes from "./client";
 
 export function registerRoutes(app: Express): void {
-  // Register admin routes
-  app.use("/api/admin", adminRoutes);
-
-  // Register client routes
-  app.use("/api/client", clientRoutes);
 
   // Root endpoint for Railway health check
   app.get("/", (req, res) => {

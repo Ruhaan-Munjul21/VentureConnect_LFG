@@ -95,33 +95,38 @@ export function serveStatic(app: Express) {
   
   console.log("Static files found:", fs.readdirSync(distPath));
   
-  // Serve static files with cache-busting headers
+  // Serve static files with aggressive cache-busting headers
   app.use(express.static(distPath, {
     setHeaders: (res, path) => {
-      if (path.endsWith('.html')) {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-      }
+      // Add cache-busting headers for all files
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      
+      // Add version header for debugging
+      res.setHeader('X-Build-Version', Date.now().toString());
     }
   }));
   
-  // SPA fallback with cache-busting headers
-  app.get("*", (req, res) => {
-    if (req.path.startsWith("/api/")) {
-      return res.status(404).json({ error: "API endpoint not found" });
-    }
-    
-    const indexPath = path.resolve(distPath, "index.html");
-    if (!fs.existsSync(indexPath)) {
-      return res.status(500).send("Frontend build incomplete");
-    }
-    
-    // Add cache-busting headers for HTML files
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    
-    res.sendFile(indexPath);
-  });
+      // SPA fallback with aggressive cache-busting headers
+    app.get("*", (req, res) => {
+      if (req.path.startsWith("/api/")) {
+        return res.status(404).json({ error: "API endpoint not found" });
+      }
+      
+      const indexPath = path.resolve(distPath, "index.html");
+      if (!fs.existsSync(indexPath)) {
+        return res.status(500).send("Frontend build incomplete");
+      }
+      
+      // Add aggressive cache-busting headers for HTML files
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      res.setHeader('X-Build-Version', Date.now().toString());
+      
+      res.sendFile(indexPath);
+    });
 }

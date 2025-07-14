@@ -1,10 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Navigation = () => {
+  const navigate = useNavigate();
+  
   const handleGetMatched = () => {
-    // Use relative URL - no localhost!
-    window.location.href = '/get-matched';
+    // Use React Router navigation for better production compatibility
+    navigate('/get-matched');
   };
 
   return (

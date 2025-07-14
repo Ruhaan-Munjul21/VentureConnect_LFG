@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ClientLogin = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,8 +25,8 @@ const ClientLogin = () => {
         const data = await response.json();
         localStorage.setItem('clientToken', data.token);
         localStorage.setItem('clientUser', JSON.stringify(data.user));
-        // Use relative URL for redirect - no localhost!
-        window.location.href = '/client/dashboard';
+        // Use React Router navigation for better production compatibility
+        navigate('/client/dashboard');
       } else {
         alert('Login failed. Please check your credentials.');
       }
@@ -96,7 +98,7 @@ const ClientLogin = () => {
           <div className="text-center">
             <button
               type="button"
-              onClick={() => window.location.href = '/get-matched'}
+              onClick={() => navigate('/get-matched')}
               className="text-blue-600 hover:text-blue-500"
             >
               Don't have an account? Get matched first

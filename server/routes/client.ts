@@ -380,7 +380,10 @@ router.get("/matches", authenticateClient, async (req: Request, res: Response) =
       console.log(`Transformed vcInvestor:`, vcInvestor);
       return {
         ...match,
-        vcInvestor: vcInvestor
+        vcInvestor: vcInvestor,
+        // Ensure reasoning fields are properly mapped
+        matchReasoning: match.matchReasoning || match['Match Reasoning'],
+        portfolioReasoning: match.portfolioReasoning || match['Match Reasoning (Portfolio)']
       };
     });
     

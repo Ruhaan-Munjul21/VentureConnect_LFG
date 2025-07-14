@@ -39,18 +39,17 @@ export default function Navigation() {
     <nav className="fixed top-0 w-full z-50 glass-effect border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Centered Logo */}
-          <div className="flex-1 flex justify-center">
+          <div className="flex items-center">
             <Link href="/">
               <span className="flex items-center cursor-pointer">
-                <img src="/images/1.png" alt="VentriLinks Logo" className="h-14 w-14 mr-2 rounded-full bg-white border border-gray-200 object-cover" style={{minWidth:'56px', objectPosition:'center'}} />
+                <img src="/images/1.png" alt="VentriLinks Logo" className="h-14 w-14 mr-2 rounded-full bg-white border border-gray-200 object-cover object-center" style={{minWidth:'56px'}} />
                 <h1 className="text-2xl font-bold text-primary hover:text-accent transition-colors">VentriLinks</h1>
               </span>
             </Link>
           </div>
           
-          <div className="hidden md:block absolute left-4">
-            <div className="flex items-baseline space-x-8">
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-baseline space-x-8">
               <button 
                 onClick={() => handleSectionClick('how-it-works')} 
                 className="text-muted-foreground hover:text-accent transition-colors duration-200"
@@ -71,7 +70,7 @@ export default function Navigation() {
             </div>
           </div>
           
-          <div className="flex items-center space-x-4 absolute right-4">
+          <div className="flex items-center space-x-4">
             <Link href="/client/login">
               <Button variant="ghost" className="text-muted-foreground hover:text-accent">
                 Client Portal
@@ -87,7 +86,7 @@ export default function Navigation() {
           </div>
           
           {/* Mobile menu button */}
-          <div className="md:hidden absolute right-4">
+          <div className="md:hidden">
             <Button
               variant="ghost"
               size="icon"

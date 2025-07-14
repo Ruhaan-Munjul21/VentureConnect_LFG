@@ -12,7 +12,7 @@ export default function Footer() {
   return (
     <footer id="contact" className="bg-primary text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {/* Company Info */}
           <div className="md:col-span-2">
             <h3 className="text-2xl font-bold mb-4">VentriLinks</h3>
@@ -53,36 +53,12 @@ export default function Footer() {
                 </button>
               </li>
               <li>
-                <button 
-                  onClick={() => scrollToSection('testimonials')} 
-                  className="text-gray-300 hover:text-accent transition-colors"
-                >
-                  Testimonials
-                </button>
-              </li>
-              <li>
                 <Link href="/team">
                   <span className="text-gray-300 hover:text-accent transition-colors cursor-pointer">
                     Team
                   </span>
                 </Link>
               </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-accent transition-colors">
-                  Pricing
-                </a>
-              </li>
-            </ul>
-          </div>
-          
-          {/* Legal */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Legal</h4>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Cookie Policy</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Contact Us</a></li>
             </ul>
           </div>
         </div>

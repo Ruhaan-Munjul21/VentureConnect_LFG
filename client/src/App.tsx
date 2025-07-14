@@ -15,8 +15,11 @@ import ClientTest from "@/pages/client-test";
 import ClientLogin from "@/pages/client-login";
 import ClientDashboard from "@/pages/client-dashboard";
 import VCTimeline from "@/pages/vc-timeline";
+import { useLocation } from "wouter";
 
 function Router() {
+  const [location, setLocation] = useLocation();
+  
   console.log('=== ROUTER DEBUG ===');
   console.log('Current location:', window.location.pathname);
   console.log('Available routes: /, /team, /contact, /get-matched, /admin, /admin/clients, /airtable-test, /client-test, /client/login, /client/dashboard, /client-portal, /test, /vc-timeline');
@@ -33,7 +36,11 @@ function Router() {
       <Route path="/client-test" component={ClientTest} />
       <Route path="/client/login" component={ClientLogin} />
       <Route path="/client/dashboard" component={ClientDashboard} />
-      <Route path="/client-portal" component={() => { window.location.href = '/client/dashboard'; return null; }} />
+      <Route path="/client-portal" component={() => { 
+        // FIX: Use wouter navigation instead of window.location.href
+        setLocation('/client/dashboard');
+        return null; 
+      }} />
       <Route path="/test" component={() => <div>Test route works!</div>} />
       <Route path="/vc-timeline" component={VCTimeline} />
       <Route component={NotFound} />

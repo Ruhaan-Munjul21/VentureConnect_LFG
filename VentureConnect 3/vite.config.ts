@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   root: './client',
   build: {
-    outDir: '../dist/client',
+    outDir: '../dist/public',
   },
   resolve: {
     alias: {

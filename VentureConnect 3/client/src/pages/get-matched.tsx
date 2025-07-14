@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const GetMatched = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     companyName: '',
     email: '',
@@ -37,9 +39,9 @@ const GetMatched = () => {
 
       if (response.ok) {
         setSubmitStatus('success');
-        // Use relative URL for redirect - no localhost!
+        // Use React Router navigation for better production compatibility
         setTimeout(() => {
-          window.location.href = '/client/dashboard';
+          navigate('/client/dashboard');
         }, 2000);
       } else {
         setSubmitStatus('error');
@@ -220,7 +222,7 @@ const GetMatched = () => {
 
           <div className="mt-8 text-center">
             <button 
-              onClick={() => window.location.href = '/'}
+              onClick={() => navigate('/')}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               ← Back to Home

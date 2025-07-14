@@ -29,7 +29,7 @@ const Hero = () => {
               Get Matched Now
             </button>
             <button
-              onClick={() => window.location.href = '/team'}
+              onClick={() => navigate('/team')}
               className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold border border-blue-600 hover:bg-blue-50 transition-colors"
             >
               Meet Our Team

@@ -2,7 +2,6 @@ import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
-import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -14,7 +13,6 @@ export function log(message: string, source = "express") {
     second: "2-digit",
     hour12: true,
   });
-
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
@@ -23,9 +21,7 @@ export async function setupVite(app: Express) {
     middlewareMode: true,
     allowedHosts: true as const,
   };
-
   const vite = await createViteServer({
-    ...viteConfig,
     configFile: false,
     customLogger: {
       ...viteLogger,
@@ -37,24 +33,21 @@ export async function setupVite(app: Express) {
     server: serverOptions,
     appType: "custom",
   });
-
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
-
     // Skip API routes - let Express handle them
     if (url.startsWith("/api/")) {
       return next();
     }
-
     try {
+      // Safety check for process.cwd() - fallback to /app for Railway
+      const cwd = process.cwd() || "/app";
       const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "..",
+        cwd,
         "client",
         "index.html",
       );
-
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
@@ -71,22 +64,51 @@ export async function setupVite(app: Express) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(process.cwd(), "dist");
-
+  // Safety check for process.cwd() - fallback to /app for Railway
+  const cwd = process.cwd() || "/app";
+  const distPath = path.resolve(cwd, "dist", "public");
+  
+  console.log(`🔍 Looking for dist directory at: ${distPath}`);
+  console.log(`📁 Current working directory: ${cwd}`);
+  
   if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+    console.warn(`Static files not found at ${distPath}, serving minimal fallback`);
+    
+    // Serve a simple fallback instead of crashing
+    app.get("*", (req, res) => {
+      if (req.path.startsWith("/api/")) {
+        return res.status(404).json({ error: "API endpoint not found" });
+      }
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>VentureConnect</title></head>
+          <body>
+            <h1>VentureConnect Loading...</h1>
+            <p>Static files not found. Check build process.</p>
+          </body>
+        </html>
+      `);
+    });
+    return;
   }
-
+  
+  console.log("Static files found:", fs.readdirSync(distPath));
+  
+  // Serve static files
   app.use(express.static(distPath));
-
-  // SPA fallback - serve index.html for all non-API routes
-  app.get("*", (req, res, next) => {
-    // Skip API routes
+  
+  // SPA fallback
+  app.get("*", (req, res) => {
     if (req.path.startsWith("/api/")) {
-      return next();
+      return res.status(404).json({ error: "API endpoint not found" });
     }
-    res.sendFile(path.resolve(distPath, "index.html"));
+    
+    const indexPath = path.resolve(distPath, "index.html");
+    if (!fs.existsSync(indexPath)) {
+      return res.status(500).send("Frontend build incomplete");
+    }
+    
+    res.sendFile(indexPath);
   });
-} 
+}

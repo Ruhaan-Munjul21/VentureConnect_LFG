@@ -5,7 +5,6 @@ const Navigation = () => {
   const navigate = useNavigate();
   
   const handleGetMatched = () => {
-    // Use React Router navigation for better production compatibility
     navigate('/get-matched');
   };
 

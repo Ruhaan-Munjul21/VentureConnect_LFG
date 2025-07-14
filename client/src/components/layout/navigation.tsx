@@ -39,7 +39,8 @@ export default function Navigation() {
     <nav className="fixed top-0 w-full z-50 glass-effect border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+          {/* Centered Logo */}
+          <div className="flex-1 flex justify-center">
             <Link href="/">
               <span className="flex items-center cursor-pointer">
                 <img src="/images/1.png" alt="VentriLinks Logo" className="h-14 w-14 mr-2 rounded-full bg-white border border-gray-200 object-cover" style={{minWidth:'56px', objectPosition:'center'}} />
@@ -48,8 +49,8 @@ export default function Navigation() {
             </Link>
           </div>
           
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
+          <div className="hidden md:block absolute left-4">
+            <div className="flex items-baseline space-x-8">
               <button 
                 onClick={() => handleSectionClick('how-it-works')} 
                 className="text-muted-foreground hover:text-accent transition-colors duration-200"
@@ -67,15 +68,10 @@ export default function Navigation() {
                   Team
                 </span>
               </Link>
-              <Link href="/contact">
-                <span className="text-muted-foreground hover:text-accent transition-colors duration-200 cursor-pointer">
-                  Contact
-                </span>
-              </Link>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 absolute right-4">
             <Link href="/client/login">
               <Button variant="ghost" className="text-muted-foreground hover:text-accent">
                 Client Portal
@@ -91,7 +87,7 @@ export default function Navigation() {
           </div>
           
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden absolute right-4">
             <Button
               variant="ghost"
               size="icon"
@@ -121,11 +117,6 @@ export default function Navigation() {
               <Link href="/team">
                 <span className="block px-3 py-2 text-muted-foreground hover:text-accent cursor-pointer">
                   Team
-                </span>
-              </Link>
-              <Link href="/contact">
-                <span className="block px-3 py-2 text-muted-foreground hover:text-accent cursor-pointer">
-                  Contact
                 </span>
               </Link>
               <div className="px-3 py-2 space-y-2">

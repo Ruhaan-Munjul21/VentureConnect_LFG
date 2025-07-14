@@ -242,7 +242,7 @@ export default function ClientDashboard() {
 
     try {
       setLoading(true);
-        console.log('Loading dashboard data...');
+      console.log('Loading dashboard data...');
       const [profileRes, matchesRes] = await Promise.all([
         fetch('/api/client/profile', {
           headers: { Authorization: `Bearer ${token}` }
@@ -272,31 +272,36 @@ export default function ClientDashboard() {
 
       if (matchesRes.ok) {
         const matchesData = await matchesRes.json();
-        console.log('Matches data loaded:', matchesData.data);
-        // DEBUG: Log the first match object to check for portfolioReasoning
+        console.log('=== MATCHES DEBUG ===');
+        console.log('Raw matches response:', matchesData);
+        console.log('Matches data array:', matchesData.data);
+        console.log('Number of matches:', matchesData.data?.length || 0);
+        
+        // Debug each match
         if (matchesData.data && matchesData.data.length > 0) {
-          console.log('First match object:', matchesData.data[0]);
-          // === MATCH OBJECT DETAILED DEBUG ===
-          console.log("=== MATCH OBJECT DETAILED DEBUG ===");
-          console.log("Full match object:", JSON.stringify(matchesData.data[0], null, 2));
-          console.log("Match object keys:", Object.keys(matchesData.data[0]));
-          console.log("Match Reasoning field:", matchesData.data[0]["Match Reasoning"]);
-          console.log("Match Reasoning (Portfolio) field:", matchesData.data[0]["Match Reasoning (Portfolio)"]);
-          console.log("All fields containing 'reasoning':", 
-            Object.keys(matchesData.data[0]).filter(key => 
-              key.toLowerCase().includes('reasoning')
-            )
-          );
+          matchesData.data.forEach((match: any, index: number) => {
+            console.log(`Match ${index + 1}:`, {
+              id: match.id,
+              vcName: match.vcName,
+              isUnlocked: match.isUnlocked,
+              clientAccess: match.clientAccess,
+              startupName: match.startupName,
+              fullMatch: match
+            });
+          });
         }
+        
         setMatches(matchesData.data);
       } else {
         console.log('Matches request failed:', matchesRes.status);
+        const errorText = await matchesRes.text();
+        console.log('Matches error response:', errorText);
       }
     } catch (err) {
-        console.error('Failed to load dashboard data:', err);
+      console.error('Failed to load dashboard data:', err);
       setError('Failed to load dashboard data');
     } finally {
-        console.log('Setting loading to false after loading data');
+      console.log('Setting loading to false after loading data');
       setLoading(false);
     }
   };
@@ -310,7 +315,7 @@ export default function ClientDashboard() {
       if (!token) {
         console.log('❌ No token found, cannot check dashboard state');
         setError('No authentication token found. Please log in again.');
-        setLoading(false); // Set loading to false on error
+        setLoading(false);
         return;
       }
 
@@ -321,7 +326,7 @@ export default function ClientDashboard() {
         });
         console.log('Form status response:', res);
         const data = await res.json();
-        setFormStatus(data.data); // Store form status for later
+        setFormStatus(data.data);
         console.log('Form status data:', data);
         console.log('Form completion status:', data.data?.isComplete);
         console.log('Form completion time:', data.data?.completionTime);
@@ -332,23 +337,12 @@ export default function ClientDashboard() {
           setSubmissionTime(data.data.submissionTime);
         }
         
-        // ADD DEBUGGING LOGS FOR FORM STATUS API RESPONSE
-        console.log("=== FORM STATUS API RESPONSE DEBUG ===");
-        console.log("Raw response:", res);
-        console.log("Response status:", res.status);
-        console.log("Response headers:", res.headers);
-        console.log("Parsed data:", data);
-        console.log("Data type:", typeof data);
-        console.log("Data keys:", Object.keys(data || {}));
-        console.log("Data.data keys:", Object.keys(data.data || {}));
-        
         if (res.ok) {
           if (!data.data.isComplete) {
             // Check core fields
             const missingCore = CORE_FIELDS.filter(f => (data.data.missingFields || []).includes(f));
             console.log('Missing core fields:', missingCore);
             if (missingCore.length === 0) {
-              // All core fields filled, hide form
               setDashboardState('results-ready');
             } else {
               setDashboardState('form-incomplete');
@@ -362,27 +356,38 @@ export default function ClientDashboard() {
               const submission = new Date(submissionTime);
               const twentyFourHoursLater = new Date(submission.getTime() + 24 * 60 * 60 * 1000);
               
+              console.log('Timer check:', {
+                now: now.toISOString(),
+                submission: submission.toISOString(),
+                twentyFourHoursLater: twentyFourHoursLater.toISOString(),
+                isBeforeTwentyFourHours: now < twentyFourHoursLater
+              });
+              
               if (now < twentyFourHoursLater) {
                 // Less than 24 hours, show processing state
+                console.log('⏱️ Less than 24 hours, setting processing state');
                 setDashboardState('processing');
+                // Set up timer to auto-transition to results-ready
+                const remainingTime = twentyFourHoursLater.getTime() - now.getTime();
+                setTimeRemaining(remainingTime);
               } else {
                 // More than 24 hours, show results
+                console.log('✅ More than 24 hours, setting results-ready state');
                 setDashboardState('results-ready');
               }
             } else {
               // No submission time, show results
+              console.log('📋 No submission time, setting results-ready state');
               setDashboardState('results-ready');
             }
             loadDashboardData();
           }
         } else {
-          // If form status check fails, default to form-needed (NO GATE)
           console.log('Form status check failed, defaulting to form-needed');
           setDashboardState('form-incomplete');
           setError(data.message || 'Failed to check form status');
-          // Load profile data even on error
-      loadDashboardData();
-    }
+          loadDashboardData();
+        }
       } catch (error) {
         console.error('Error checking dashboard state:', error);
         let errorMsg = 'Unknown error';
@@ -392,12 +397,9 @@ export default function ClientDashboard() {
           errorMsg = error;
         }
         setError('Error checking dashboard state: ' + errorMsg);
-        // On error, default to form-needed (NO GATE)
         setDashboardState('form-incomplete');
-        // Load profile data even on error
         loadDashboardData();
       } finally {
-        // Always set loading to false after checking dashboard state
         console.log('Setting loading to false');
         setLoading(false);
       }
@@ -507,6 +509,23 @@ export default function ClientDashboard() {
     setPortfolioModalOpen(true);
   }
 
+  // Add manual override button for testing
+  const forceShowResults = () => {
+    console.log('🔧 MANUAL OVERRIDE: Forcing results-ready state');
+    setDashboardState('results-ready');
+  };
+
+  // Add this debug log before rendering the matches grid
+  if (matches.length > 0) {
+    console.log('=== RENDERING MATCHES DEBUG ===');
+    console.log('All matches being rendered:', matches);
+    console.log('Match details:', matches.map(m => ({
+      id: m.id,
+      vcName: m.vcInvestor?.name || m.vcName,
+      isUnlocked: m.isUnlocked
+    })));
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -523,13 +542,19 @@ export default function ClientDashboard() {
               </div>
             </div>
               <div className="flex items-center gap-2">
-                <Button variant="secondary" onClick={() => window.location.href = '/'}>
+                <Button variant="secondary" onClick={() => setLocation('/')}>
                   Back to Main Site
                 </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+                <Button variant="outline" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+                <Button variant="outline" onClick={loadDashboardData}>
+                  Refresh Matches
+                </Button>
+                <Button variant="outline" onClick={forceShowResults}>
+                  Show Results (Debug)
+                </Button>
               </div>
           </div>
         </div>
@@ -615,12 +640,12 @@ export default function ClientDashboard() {
                         </ul>
                       </div>
                     )}
-                      <Button 
-                      onClick={() => window.location.href = '/get-matched'}
+                    <Button 
+                      onClick={() => setLocation('/get-matched')}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
-                      >
+                    >
                       Fill Out Startup Form
-                      </Button>
+                    </Button>
                   </div>
                 </div>
               );
@@ -822,4 +847,4 @@ export default function ClientDashboard() {
         </Dialog>
     </div>
   );
-} 
+}

@@ -477,17 +477,17 @@ export class AirtableService {
   transformMatchToClientMatch(record: any) {
     return {
       id: record.id,
-      startupName: record.fields[MATCH_FIELDS.STARTUP_NAME] || '',
-      vcName: record.fields[MATCH_FIELDS.VC_NAME] || '',
-      gptFit: record.fields[MATCH_FIELDS.GPT_FIT] || false,
-      manuallyApproved: record.fields[MATCH_FIELDS.MANUALLY_APPROVED] || false,
-      similarityScore: record.fields[MATCH_FIELDS.SIMILARITY_SCORE] || 0,
-      clientAccess: record.fields[MATCH_FIELDS.CLIENT_ACCESS] || 'locked',
-      matchReasoning: record.fields['Match Reasoning'] || '',
-      portfolioReasoning: record.fields['Match Reasoning (Portfolio)'] || '',
-      isActive: true,
-      createdAt: record.createdTime,
-      updatedAt: record.fields.lastModifiedTime || record.createdTime
+      startupName: record.fields['Startup Name'],
+      vcName: record.fields['VC Name'],
+      gptFit: record.fields['GPT Fit'],
+      manuallyApproved: record.fields['Manually Approved'],
+      similarityScore: record.fields['Similarity Score'] || 0,
+      clientAccess: record.fields['Client Access'],
+      matchReasoning: record.fields['Match Reasoning'],
+      portfolioReasoning: record.fields['Match Reasoning (Portfolio)'],
+      isActive: record.fields['Is Active'] !== false,
+      createdAt: record.fields['Created Time'],
+      updatedAt: record.fields['Last Modified Time']
     };
   }
 
@@ -532,4 +532,4 @@ export class AirtableService {
   }
 }
 
-export const airtableService = new AirtableService(); 
+export const airtableService = new AirtableService();

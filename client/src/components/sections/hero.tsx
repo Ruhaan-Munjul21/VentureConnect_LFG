@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useLocation, Link } from "wouter";
 
 export default function Hero() {
+  const [, setLocation] = useLocation();
+
   const handleGetMatched = () => {
-    window.open('http://localhost:3000/get-matched', '_blank');
+    setLocation('/get-matched');
   };
 
   return (
@@ -43,13 +46,14 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            <Button 
-              onClick={handleGetMatched}
-              className="bg-gradient-to-r from-accent to-accent-purple text-accent-foreground px-8 py-4 text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-              size="lg"
-            >
-              Get Matched
-            </Button>
+            <Link href="/get-matched">
+              <Button 
+                className="bg-gradient-to-r from-accent to-accent-purple text-accent-foreground px-8 py-4 text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                size="lg"
+              >
+                Get Matched
+              </Button>
+            </Link>
           </motion.div>
           
           {/* Trust badges */}

@@ -25,13 +25,14 @@ export default function Navigation() {
     if (location === '/') {
       scrollToSection(sectionId);
     } else {
-      // Navigate to home page with hash
-      window.location.href = '/#' + sectionId;
+      // FIX: Use wouter navigation instead of window.location.href
+      setLocation('/#' + sectionId);
     }
   };
 
   const handleGetMatched = () => {
-    window.open('http://localhost:3000/get-matched', '_blank');
+    setLocation('/get-matched');
+    setIsMenuOpen(false);
   };
 
   return (
@@ -80,12 +81,13 @@ export default function Navigation() {
                 Client Portal
               </Button>
             </Link>
-            <Button 
-              onClick={handleGetMatched}
-              className="bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-lg"
-            >
-              Get Matched
-            </Button>
+            <Link href="/get-matched">
+              <Button 
+                className="bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-lg"
+              >
+                Get Matched
+              </Button>
+            </Link>
           </div>
           
           {/* Mobile menu button */}
@@ -132,13 +134,14 @@ export default function Navigation() {
                     Client Portal
                   </Button>
                 </Link>
-                <Button 
-                  onClick={handleGetMatched}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white"
-                  size="sm"
-                >
-                  Get Matched
-                </Button>
+                <Link href="/get-matched">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white"
+                    size="sm"
+                  >
+                    Get Matched
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

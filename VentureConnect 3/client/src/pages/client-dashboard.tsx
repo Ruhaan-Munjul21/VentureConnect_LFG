@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ClientDashboard = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -12,8 +14,8 @@ const ClientDashboard = () => {
   const checkAuth = async () => {
     const token = localStorage.getItem('clientToken');
     if (!token) {
-      // Use relative URL for redirect - no localhost!
-      window.location.href = '/client/login';
+      // Use React Router navigation for better production compatibility
+      navigate('/client/login');
       return;
     }
 
@@ -31,13 +33,13 @@ const ClientDashboard = () => {
         fetchMatches(token);
       } else {
         localStorage.removeItem('clientToken');
-        // Use relative URL for redirect - no localhost!
-        window.location.href = '/client/login';
+        // Use React Router navigation for better production compatibility
+        navigate('/client/login');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Use relative URL for redirect - no localhost!
-      window.location.href = '/client/login';
+      // Use React Router navigation for better production compatibility
+      navigate('/client/login');
     }
   };
 
@@ -64,8 +66,8 @@ const ClientDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('clientToken');
     localStorage.removeItem('clientUser');
-    // Use relative URL for redirect - no localhost!
-    window.location.href = '/';
+    // Use React Router navigation for better production compatibility
+    navigate('/');
   };
 
   if (isLoading) {
@@ -91,7 +93,7 @@ const ClientDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => window.location.href = '/get-matched'}
+                onClick={() => navigate('/get-matched')}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
               >
                 Get Matched
@@ -142,7 +144,7 @@ const ClientDashboard = () => {
                     Fill out your startup details to get matched with the right investors.
                   </p>
                   <button
-                    onClick={() => window.location.href = '/get-matched'}
+                    onClick={() => navigate('/get-matched')}
                     className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
                   >
                     Get Matched Now

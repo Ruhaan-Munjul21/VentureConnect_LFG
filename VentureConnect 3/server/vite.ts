@@ -95,10 +95,18 @@ export function serveStatic(app: Express) {
   
   console.log("Static files found:", fs.readdirSync(distPath));
   
-  // Serve static files
-  app.use(express.static(distPath));
+  // Serve static files with cache-busting headers
+  app.use(express.static(distPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  }));
   
-  // SPA fallback
+  // SPA fallback with cache-busting headers
   app.get("*", (req, res) => {
     if (req.path.startsWith("/api/")) {
       return res.status(404).json({ error: "API endpoint not found" });
@@ -108,6 +116,11 @@ export function serveStatic(app: Express) {
     if (!fs.existsSync(indexPath)) {
       return res.status(500).send("Frontend build incomplete");
     }
+    
+    // Add cache-busting headers for HTML files
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     
     res.sendFile(indexPath);
   });

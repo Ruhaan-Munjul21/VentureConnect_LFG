@@ -337,7 +337,7 @@ router.get("/matches", authenticateClient, async (req: Request, res: Response) =
     
     console.log('All matches from Airtable:', matches.length);
     
-    // Filter matches for this client and only Unlocked
+    // Filter matches for this client and only Unlocked (keep this filter)
     const clientMatches = matches
       .map((record: any) => {
         const transformed = airtableService.transformMatchToClientMatch(record);

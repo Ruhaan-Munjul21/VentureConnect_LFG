@@ -343,44 +343,72 @@ export default function ClientDashboard() {
             const missingCore = CORE_FIELDS.filter(f => (data.data.missingFields || []).includes(f));
             console.log('Missing core fields:', missingCore);
             if (missingCore.length === 0) {
-              setDashboardState('results-ready');
+              // All core fields filled but form not marked complete - show processing
+              console.log('⏳ All core fields complete, but form not marked complete - showing processing');
+              setDashboardState('processing');
             } else {
               setDashboardState('form-incomplete');
             }
             loadDashboardData();
           } else {
-            // Form is complete, check 24-hour timer using submissionTime
-            const submissionTime = data.data.submissionTime;
-            if (submissionTime) {
-              const now = new Date();
-              const submission = new Date(submissionTime);
-              const twentyFourHoursLater = new Date(submission.getTime() + 24 * 60 * 60 * 1000);
+            // Form is complete - check if admin has released matches
+            console.log('✅ Form is complete, checking for admin-released matches...');
+            
+            // Load and check matches
+            const matchesResponse = await fetch('/api/client/matches', {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (matchesResponse.ok) {
+              const matchesData = await matchesResponse.json();
+              const hasUnlockedMatches = matchesData.data && matchesData.data.length > 0;
               
-              console.log('Timer check:', {
-                now: now.toISOString(),
-                submission: submission.toISOString(),
-                twentyFourHoursLater: twentyFourHoursLater.toISOString(),
-                isBeforeTwentyFourHours: now < twentyFourHoursLater
-              });
+              console.log('Has unlocked matches from admin:', hasUnlockedMatches);
+              console.log('Number of unlocked matches:', matchesData.data?.length || 0);
               
-              if (now < twentyFourHoursLater) {
-                // Less than 24 hours, show processing state
-                console.log('⏱️ Less than 24 hours, setting processing state');
-                setDashboardState('processing');
-                // Set up timer to auto-transition to results-ready
-                const remainingTime = twentyFourHoursLater.getTime() - now.getTime();
-                setTimeRemaining(remainingTime);
-              } else {
-                // More than 24 hours, show results
-                console.log('✅ More than 24 hours, setting results-ready state');
+              if (hasUnlockedMatches) {
+                // Admin has released matches - show them immediately
+                console.log('🎉 Admin has released matches, showing results');
+                setMatches(matchesData.data);
                 setDashboardState('results-ready');
+              } else {
+                // Form complete but admin hasn't released matches yet - show processing with timer
+                const submissionTime = data.data.submissionTime;
+                if (submissionTime) {
+                  const now = new Date();
+                  const submission = new Date(submissionTime);
+                  const twentyFourHoursLater = new Date(submission.getTime() + 24 * 60 * 60 * 1000);
+                  
+                  console.log('Timer check - waiting for admin to release matches:', {
+                    now: now.toISOString(),
+                    submission: submission.toISOString(),
+                    twentyFourHoursLater: twentyFourHoursLater.toISOString(),
+                    isBeforeTwentyFourHours: now < twentyFourHoursLater
+                  });
+                  
+                  if (now < twentyFourHoursLater) {
+                    // Still within 24 hours - show processing timer
+                    console.log('⏱️ Within 24 hours, waiting for admin to release matches');
+                    setDashboardState('processing');
+                    const remainingTime = twentyFourHoursLater.getTime() - now.getTime();
+                    setTimeRemaining(remainingTime);
+                  } else {
+                    // 24 hours passed - show "no matches" message
+                    console.log('⏰ 24 hours passed, admin has not released matches');
+                    setDashboardState('results-ready');
+                    setMatches([]); // Ensure empty matches
+                  }
+                } else {
+                  // No submission time - show processing indefinitely until admin releases
+                  console.log('📋 No submission time, showing processing until admin releases');
+                  setDashboardState('processing');
+                }
               }
             } else {
-              // No submission time, show results
-              console.log('📋 No submission time, setting results-ready state');
-              setDashboardState('results-ready');
+              // Error fetching matches - show processing
+              console.log('❌ Error fetching matches, showing processing');
+              setDashboardState('processing');
             }
-            loadDashboardData();
           }
         } else {
           console.log('Form status check failed, defaulting to form-needed');
@@ -405,20 +433,49 @@ export default function ClientDashboard() {
       }
     };
 
-    // Add timer effect for countdown
+    // Enhanced timer effect - check for admin-released matches periodically
     useEffect(() => {
       if (dashboardState === 'processing' && timeRemaining !== null) {
-        const interval = setInterval(() => {
+        const interval = setInterval(async () => {
+          // Check for admin-released matches every 10 seconds
+          const token = localStorage.getItem('clientToken');
+          if (token) {
+            try {
+              const matchesResponse = await fetch('/api/client/matches', {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              
+              if (matchesResponse.ok) {
+                const matchesData = await matchesResponse.json();
+                const hasUnlockedMatches = matchesData.data && matchesData.data.length > 0;
+                
+                if (hasUnlockedMatches) {
+                  console.log('🎉 Admin released matches! Switching to results');
+                  setMatches(matchesData.data);
+                  setDashboardState('results-ready');
+                  clearInterval(interval);
+                  return;
+                }
+              }
+            } catch (error) {
+              console.log('Error checking for admin-released matches:', error);
+            }
+          }
+          
+          // Update countdown timer
           setTimeRemaining(prev => {
             if (prev === null) return null;
             if (prev <= 1000) {
+              console.log('⏰ 24 hour timer expired, showing results (even if no matches)');
               setDashboardState('results-ready');
+              setMatches([]); // Ensure empty matches after timer
               clearInterval(interval);
               return null;
             }
             return prev - 1000;
           });
-        }, 1000);
+        }, 10000); // Check every 10 seconds instead of every second
+        
         return () => clearInterval(interval);
       }
     }, [dashboardState, timeRemaining]);
@@ -709,9 +766,10 @@ export default function ClientDashboard() {
             <Card className="text-center py-12">
               <CardContent>
                 <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No matches yet</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No matches available yet</h3>
                 <p className="text-gray-600">
-                  Your VentriLinks team will assign VC matches to your company soon.
+                  Your VentriLinks team is still working on finding the perfect VC matches for your company.
+                  You'll see them here once they're ready.
                 </p>
               </CardContent>
             </Card>

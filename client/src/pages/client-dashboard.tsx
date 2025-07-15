@@ -799,19 +799,28 @@ export default function ClientDashboard() {
                                 {match.vcInvestor?.name || match.vcName || "Unknown VC"}
                               </a>
                             ) : (
-                              <span className="text-gray-900">{match.vcInvestor?.name || match.vcName || "Unknown VC"}</span>
+                              <span className="text-gray-900">
+                                {match.vcInvestor?.name || match.vcName || "Unknown VC"}
+                              </span>
                             )}
                           </h3>
+                          
                           <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
+                          
                           <div className="match-info mb-3">
                             <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
                             <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
                             <p>Geography: {match.vcInvestor?.geography || "US"}</p>
                             {match.vcInvestor?.website && (
                               <p className="text-sm text-blue-600 mt-2">
-                                🌐 <a 
-                                  href={match.vcInvestor.website.startsWith('http') ? match.vcInvestor.website : `https://${match.vcInvestor.website}`}
-                                  target="_blank" 
+                                🌐{" "}
+                                <a
+                                  href={
+                                    match.vcInvestor.website.startsWith("http")
+                                      ? match.vcInvestor.website
+                                      : `https://${match.vcInvestor.website}`
+                                  }
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   className="hover:underline"
                                 >
@@ -820,16 +829,19 @@ export default function ClientDashboard() {
                               </p>
                             )}
                           </div>
+                          
                           <div className="match-actions flex flex-col gap-3 items-start">
                             {(match.matchReasoning || match.portfolioReasoning) && (
                               <a
                                 href="#"
-                                onClick={e => { 
-                                  e.preventDefault(); 
+                                onClick={(e) => {
+                                  e.preventDefault();
                                   const combinedReasoning = [
                                     match.matchReasoning && `Match Analysis:\n${match.matchReasoning}`,
-                                    match.portfolioReasoning && `\nPortfolio Analysis:\n${match.portfolioReasoning}`
-                                  ].filter(Boolean).join('\n');
+                                    match.portfolioReasoning && `\nPortfolio Analysis:\n${match.portfolioReasoning}`,
+                                  ]
+                                    .filter(Boolean)
+                                    .join("\n");
                                   openMatchReasoning(combinedReasoning);
                                 }}
                                 className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
@@ -837,7 +849,6 @@ export default function ClientDashboard() {
                                 <span>🧬</span> Why this match?
                               </a>
                             )}
-                            {/* Leave Feedback Button */}
                             <Button
                               onClick={() => openFeedbackDialog(match)}
                               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
@@ -854,7 +865,6 @@ export default function ClientDashboard() {
               </div>
             </>
           )}
-
         </div>
       </div>
 
@@ -864,16 +874,24 @@ export default function ClientDashboard() {
           <DialogHeader>
             <DialogTitle>Match Feedback</DialogTitle>
             <DialogDescription>
-              Help us improve our algorithm by sharing your thoughts about this match with {selectedMatchForFeedback?.vcInvestor?.name || selectedMatchForFeedback?.vcName}
+              Help us improve our algorithm by sharing your thoughts about this match with{" "}
+              {selectedMatchForFeedback?.vcInvestor?.name ||
+               selectedMatchForFeedback?.vcName ||
+               "this investor"}
             </DialogDescription>
           </DialogHeader>
+
           {selectedMatchForFeedback && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">How good is this match?</label>
-                <Select 
+                <label className="text-sm font-medium mb-2 block">
+                  How good is this match?
+                </label>
+                <Select
                   value={feedbackForm.matchQuality}
-                  onValueChange={(value) => setFeedbackForm(prev => ({ ...prev, matchQuality: value }))}
+                  onValueChange={(value) =>
+                    setFeedbackForm((prev) => ({ ...prev, matchQuality: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select match quality..." />

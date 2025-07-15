@@ -792,12 +792,11 @@ export default function ClientDashboard() {
                             </Button>
                           </div>
                         </div>
-                  </div>
-                </CardContent>
-              </Card>
-                );
-              })}
-        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             </>
           )}
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from "framer-motion";
 import { Linkedin, Mail } from "lucide-react";
 import { Button } from '@/components/ui/button';
@@ -54,6 +54,11 @@ const advisors = [
 export default function Team() {
 	const [, setLocation] = useLocation();
 
+	// Force scroll to top when component mounts
+	useEffect(() => {
+		window.scrollTo(0, 0);
+	}, []);
+
 	// Function to handle navigation to home with scroll to top
 	const navigateToHome = () => {
 		setLocation('/');
@@ -91,21 +96,34 @@ export default function Team() {
 				</div>
 			</header>
 
-			{/* Team Content */}
+			{/* Team Content - Starts at top */}
 			<div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 				<div className="text-center mb-12">
-					<h1 className="text-4xl font-bold text-primary mb-4">Our Team</h1>
+					<h1 className="text-4xl font-bold text-primary mb-4">Meet Our Team</h1>
 					<p className="text-xl text-muted-foreground">
-						Meet the experts behind VentriLinks
+						The experts behind VentriLinks biotech-VC matchmaking platform
 					</p>
 				</div>
+				
+				{/* Team Members Section */}
+				<section className="mb-16">
+					<h2 className="text-3xl font-bold text-primary mb-8 text-center">Leadership Team</h2>
+					<div className="bg-white rounded-lg shadow-lg p-8">
+						<p className="text-center text-muted-foreground">
+							Team member profiles will be displayed here
+						</p>
+					</div>
+				</section>
 
-				{/* Team content would go here */}
-				<div className="bg-white rounded-lg shadow-lg p-8">
-					<p className="text-center text-muted-foreground">
-						Team profiles will be implemented here
-					</p>
-				</div>
+				{/* Advisors Section */}
+				<section id="advisors" className="mb-16">
+					<h2 className="text-3xl font-bold text-primary mb-8 text-center">Advisors</h2>
+					<div className="bg-white rounded-lg shadow-lg p-8">
+						<p className="text-center text-muted-foreground">
+							Advisor profiles will be displayed here
+						</p>
+					</div>
+				</section>
 			</div>
 		</div>
 	);

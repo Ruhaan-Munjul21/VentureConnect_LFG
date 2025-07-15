@@ -206,11 +206,12 @@ export default function Team() {
 											alt={advisor.name}
 											className="w-20 h-20 rounded-full object-cover flex-shrink-0 border-2 border-gray-100"
 											onError={(e) => {
-												e.target.style.backgroundColor = "#f3f4f6";
-												e.target.style.display = "flex";
-												e.target.style.alignItems = "center";
-												e.target.style.justifyContent = "center";
-												e.target.innerHTML = `<span style="color: #6b7280; font-size: 16px;">${advisor.name
+												const target = e.target as HTMLImageElement;
+												target.style.backgroundColor = "#f3f4f6";
+												target.style.display = "flex";
+												target.style.alignItems = "center";
+												target.style.justifyContent = "center";
+												target.innerHTML = `<span style="color: #6b7280; font-size: 16px;">${advisor.name
 													.split(" ")
 													.map((n) => n[0])
 													.join("")}</span>`;

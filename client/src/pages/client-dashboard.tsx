@@ -162,6 +162,15 @@ export default function ClientDashboard() {
   const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
   const [currentPortfolioReasoning, setCurrentPortfolioReasoning] = useState<string | null>(null);
 
+  // Add feedback state management
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [selectedMatchForFeedback, setSelectedMatchForFeedback] = useState<ClientMatch | null>(null);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({
+    matchQuality: '',
+    feedbackText: ''
+  });
+
   const [, setLocation] = useLocation();
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [matches, setMatches] = useState<ClientMatch[]>([]);
@@ -729,7 +738,27 @@ export default function ClientDashboard() {
                     <Card key={match.id} className="hover:shadow-lg transition-shadow">
                       <CardContent>
                         <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
-                          <h3 className="text-lg font-bold mb-1">{match.vcInvestor?.name || match.vcName || "Unknown VC"}</h3>
+                          {/* VC Name as Hyperlink */}
+                          <h3 className="text-lg font-bold mb-1">
+                            {match.vcInvestor?.website ? (
+                              <a 
+                                href={match.vcInvestor.website} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                              >
+                                {match.vcInvestor?.name || match.vcName || "Unknown VC"}
+                              </a>
+                            ) : (
+                              <a 
+                                href="#"
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                title="Website not found"
+                              >
+                                {match.vcInvestor?.name || match.vcName || "Unknown VC"}
+                              </a>
+                            )}
+                          </h3>
                           <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
                           <div className="match-info mb-3">
                             <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
@@ -742,7 +771,6 @@ export default function ClientDashboard() {
                                 href="#"
                                 onClick={e => { 
                                   e.preventDefault(); 
-                                  // Combine both reasoning types into one comprehensive explanation
                                   const combinedReasoning = [
                                     match.matchReasoning,
                                     match.portfolioReasoning && `\n\nPortfolio Analysis:\n${match.portfolioReasoning}`
@@ -754,17 +782,16 @@ export default function ClientDashboard() {
                                 <span>🧬</span> Why this match?
                               </a>
                             )}
-                            {match.vcInvestor?.website && (
-                              <a
-                                href={match.vcInvestor.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
-                              >
-                                <span>🌐</span> Visit {match.vcInvestor.name} Website
-                              </a>
-                            )}
+                            {/* Feedback Button */}
+                            <Button
+                              onClick={() => openFeedbackDialog(match)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium"
+                              size="sm"
+                            >
+                              💬 Provide Feedback
+                            </Button>
                           </div>
+                        </div>
                   </div>
                 </CardContent>
               </Card>
@@ -882,7 +909,73 @@ export default function ClientDashboard() {
         </DialogContent>
       </Dialog>
 
-        {/* Match Reasoning Modal - Updated title */}
+      {/* Feedback Dialog */}
+      <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>How was this match?</DialogTitle>
+            <DialogDescription>
+              Help us improve our matching algorithm by sharing your feedback about {selectedMatchForFeedback?.vcInvestor?.name || selectedMatchForFeedback?.vcName}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedMatchForFeedback && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Match Quality</label>
+                <Select 
+                  value={feedbackForm.matchQuality}
+                  onValueChange={(value) => setFeedbackForm(prev => ({ ...prev, matchQuality: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select match quality..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Good Match">Good Match</SelectItem>
+                    <SelectItem value="Poor Match">Poor Match</SelectItem>
+                    <SelectItem value="Maybe">Maybe</SelectItem>
+                    <SelectItem value="Not Sure">Not Sure</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Detailed Feedback</label>
+                <Textarea
+                  placeholder="Please provide detailed feedback about this match..."
+                  value={feedbackForm.feedbackText}
+                  onChange={(e) => setFeedbackForm(prev => ({ ...prev, feedbackText: e.target.value }))}
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => submitFeedback(
+                    selectedMatchForFeedback.id.toString(), 
+                    feedbackForm.matchQuality,
+                    feedbackForm.feedbackText
+                  )}
+                  disabled={submittingFeedback || !feedbackForm.matchQuality}
+                >
+                  {submittingFeedback ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Feedback'
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+        {/* Match Reasoning Modal */}
         <Dialog open={reasoningModalOpen} onOpenChange={setReasoningModalOpen}>
           <DialogContent>
             <DialogHeader>

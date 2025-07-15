@@ -552,6 +552,49 @@ export default function ClientDashboard() {
     }
   };
 
+  // Function to open feedback dialog
+  const openFeedbackDialog = (match: ClientMatch) => {
+    setSelectedMatchForFeedback(match);
+    setFeedbackForm({ matchQuality: '', feedbackText: '' }); // Reset form
+    setFeedbackDialogOpen(true);
+  };
+
+  // Function to submit feedback
+  const submitFeedback = async (matchId: string, matchQuality: string, feedbackText: string) => {
+    const token = localStorage.getItem('clientToken');
+    if (!token) return;
+
+    try {
+      setSubmittingFeedback(true);
+      const response = await fetch(`/api/client/matches/${matchId}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          matchQuality, 
+          feedbackText: feedbackText || '' 
+        })
+      });
+
+      if (response.ok) {
+        console.log('Feedback submitted successfully');
+        setFeedbackDialogOpen(false);
+        setSelectedMatchForFeedback(null);
+        // Optionally show a success message
+      } else {
+        console.error('Failed to submit feedback');
+        setError('Failed to submit feedback');
+      }
+    } catch (err) {
+      console.error('Error submitting feedback:', err);
+      setError('Error submitting feedback');
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
     // Remove getStatusStats function and all stats-related code
 
     // ADD DEBUGGING LOGS FOR RENDER
@@ -797,7 +840,7 @@ export default function ClientDashboard() {
                             )}
                             {/* Leave Feedback Button */}
                             <Button
-  onClick={() => openFeedbackDialog(match)}
+                              onClick={() => openFeedbackDialog(match)}
                               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
                               size="sm"
                             >

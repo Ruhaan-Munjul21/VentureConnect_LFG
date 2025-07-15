@@ -797,7 +797,7 @@ export default function ClientDashboard() {
                             )}
                             {/* Leave Feedback Button */}
                             <Button
-                              onClick={() => openFeedbackDialog(match)}
+  onClick={() => openFeedbackDialog(match)}
                               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
                               size="sm"
                             >
@@ -812,7 +812,6 @@ export default function ClientDashboard() {
               </div>
             </>
           )}
-
         </div>
       </div>
 

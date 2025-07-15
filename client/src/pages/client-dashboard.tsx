@@ -561,11 +561,6 @@ export default function ClientDashboard() {
       setReasoningModalOpen(true);
     }
 
-  function openPortfolioReasoning(reasoning: string) {
-    setCurrentPortfolioReasoning(reasoning);
-    setPortfolioModalOpen(true);
-  }
-
   // Add manual override button for testing
   const forceShowResults = () => {
     console.log('🔧 MANUAL OVERRIDE: Forcing results-ready state');
@@ -715,6 +710,14 @@ export default function ClientDashboard() {
 
           {dashboardState === 'results-ready' && (
             <>
+              {/* Section Title */}
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-primary mb-4">Top Matched Investors (Up to 50)</h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  If any matches seem off, please let us know which ones and why—your input helps us improve our matching algorithm.
+                </p>
+              </div>
+
               {/* Matches Grid */}
               <div className="matches-grid grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto p-5">
                 {matches.map((match) => {
@@ -733,23 +736,32 @@ export default function ClientDashboard() {
                             <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
                             <p>Geography: {match.vcInvestor?.geography || "US"}</p>
                           </div>
-                          <div className="match-actions flex gap-4 items-center">
-                            {match.matchReasoning && (
+                          <div className="match-actions flex flex-col gap-3 items-start">
+                            {(match.matchReasoning || match.portfolioReasoning) && (
                               <a
                                 href="#"
-                                onClick={e => { e.preventDefault(); openMatchReasoning(match.matchReasoning!); }}
+                                onClick={e => { 
+                                  e.preventDefault(); 
+                                  // Combine both reasoning types into one comprehensive explanation
+                                  const combinedReasoning = [
+                                    match.matchReasoning,
+                                    match.portfolioReasoning && `\n\nPortfolio Analysis:\n${match.portfolioReasoning}`
+                                  ].filter(Boolean).join('');
+                                  openMatchReasoning(combinedReasoning);
+                                }}
                                 className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
                               >
                                 <span>🧬</span> Why this match?
                               </a>
                             )}
-                            {match.portfolioReasoning && (
+                            {match.vcInvestor?.website && (
                               <a
-                                href="#"
-                                onClick={e => { e.preventDefault(); openPortfolioReasoning(match.portfolioReasoning!); }}
-                                className="text-green-700 hover:underline text-sm font-medium flex items-center gap-1"
+                                href={match.vcInvestor.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
                               >
-                                <span>📊</span> Portfolio Analysis
+                                <span>🌐</span> Visit {match.vcInvestor.name} Website
                               </a>
                             )}
                           </div>
@@ -870,11 +882,11 @@ export default function ClientDashboard() {
         </DialogContent>
       </Dialog>
 
-        {/* Match Reasoning Modal */}
+        {/* Match Reasoning Modal - Updated title */}
         <Dialog open={reasoningModalOpen} onOpenChange={setReasoningModalOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Why this match?</DialogTitle>
+              <DialogTitle>Match Analysis & Portfolio Insights</DialogTitle>
             </DialogHeader>
             <div className="text-blue-900 whitespace-pre-line text-base leading-relaxed">
               {currentReasoning}
@@ -886,23 +898,6 @@ export default function ClientDashboard() {
             </div>
         </DialogContent>
       </Dialog>
-
-        {/* Portfolio Reasoning Modal */}
-        <Dialog open={portfolioModalOpen} onOpenChange={setPortfolioModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Why we matched you based on our portfolio analysis</DialogTitle>
-            </DialogHeader>
-            <div className="text-green-900 whitespace-pre-line text-base leading-relaxed">
-              {currentPortfolioReasoning}
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button variant="secondary" onClick={() => setPortfolioModalOpen(false)}>
-                Close
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
     </div>
   );
 }

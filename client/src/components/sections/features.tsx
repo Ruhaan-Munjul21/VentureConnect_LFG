@@ -20,7 +20,7 @@ const features = [
   },
   {
     icon: Mail,
-    title: "Deal Flow Tracking",
+    title: "Capital Raise Management",
     description: "Backend management system that helps startups track opportunities, craft hyperpersonalized outreach emails, and manage investor relationships through intelligent workflow assistance.",
     color: "bg-green-500",
     gradient: "from-green-50 to-teal-50",

@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
-import { User, Database, Brain } from "lucide-react";
+import { User, Database, Brain, FileText } from "lucide-react";
 
 const steps = [
 	{
-		icon: User,
-		title: "Create Dynamic Profiles",
+		icon: FileText,
+		title: "Create Startup Profile",
 		description:
-			"Startups build comprehensive profiles showcasing their drug development pipeline, team expertise, and funding needs with our intelligent form system.",
+			"Biotech startups create an account and build a profile detailing their disease focus, development stage, therapeutic modality, location, fundraising goals, and more. A non-confidential slide deck should also be uploaded to support investor matching.",
 		color: "from-accent to-accent-purple",
 		number: 1,
 		type: "icon",
@@ -15,16 +15,16 @@ const steps = [
 		icon: Brain,
 		title: "AI-Powered Matching",
 		description:
-			"Our semantic and vector-based AI analyzes startup profiles against investor preferences, therapeutic areas, and investment criteria for optimal matches. We have VC fingerprint trained on thousands of data points per VC.",
+			"Our semantic and vector-based AI analyzes startup profiles against investor preferences and investment criteria to generate optimal matches. Each VC's 'investment fingerprint' is trained on thousands of data points, enabling highly personalized and data-driven matching.",
 		color: "from-accent-purple to-purple-600",
 		number: 2,
 		type: "icon",
 	},
 	{
 		icon: Database,
-		title: "Deal Flow Tracking",
+		title: "Capital Raise Management",
 		description:
-			"Backend management system that helps startups track opportunities, craft hyperpersonalized emails based on VC preferences and investment patterns, and manage investor relationships effectively.",
+			"A backend system that helps startups track fundraising opportunities, craft hyper-personalized emails based on the startup's profile, slide deck, and each VC's preferences and investment patterns, and effectively manage investor relationships.",
 		color: "from-green-500 to-accent",
 		number: 3,
 		type: "icon",

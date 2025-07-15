@@ -455,22 +455,28 @@ export class AirtableService {
   }
 
   transformVCToInvestor(record: any) {
+    // Ensure website URL is properly extracted from the VC database
+    const websiteUrl = record.fields['Website URL'] || record.fields['Website'] || null;
+    
+    console.log(`Transforming VC: ${record.fields['VC/Investor Name']}`);
+    console.log(`Website URL field:`, websiteUrl);
+    
     return {
       id: record.id,
-      name: record.fields[VC_FIELDS.NAME] || '',
-      firm: record.fields[VC_FIELDS.FIRM] || '',
-      email: record.fields[VC_FIELDS.EMAIL] || null,
-      phone: record.fields[VC_FIELDS.PHONE] || null,
-      linkedin: record.fields[VC_FIELDS.LINKEDIN] || null,
-      website: record.fields[VC_FIELDS.WEBSITE] || null,
-      investmentFocus: record.fields[VC_FIELDS.INVESTMENT_FOCUS] || null,
-      investmentStage: record.fields[VC_FIELDS.INVESTMENT_STAGE] || null,
-      geography: record.fields[VC_FIELDS.GEOGRAPHY] || null,
-      portfolioSize: record.fields[VC_FIELDS.PORTFOLIO_SIZE] || null,
-      description: record.fields[VC_FIELDS.DESCRIPTION] || null,
-      isActive: true,
-      createdAt: record.createdTime,
-      updatedAt: record.fields.lastModifiedTime || record.createdTime
+      name: record.fields['VC/Investor Name'],
+      firm: record.fields['Firm Name'] || '',
+      email: record.fields['Email'],
+      phone: record.fields['Phone'],
+      linkedin: record.fields['LinkedIn'],
+      website: websiteUrl, // This will be used for hyperlinking VC names
+      investmentFocus: record.fields['Investment Focus'],
+      investmentStage: record.fields['Investment Stage'],
+      geography: record.fields['Geography'],
+      portfolioSize: record.fields['Portfolio Size'],
+      description: record.fields['Description'],
+      isActive: record.fields['Is Active'] !== false,
+      createdAt: record.fields['Created Time'],
+      updatedAt: record.fields['Last Modified Time']
     };
   }
 

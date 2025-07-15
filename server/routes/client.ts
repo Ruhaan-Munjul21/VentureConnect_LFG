@@ -353,21 +353,49 @@ router.get("/matches", authenticateClient, async (req: Request, res: Response) =
     
     console.log('Found unlocked matches for client:', clientMatches.length);
     
-    // Get detailed information for each match
+    // Get detailed information for each match by looking up VC website
     const matchesWithDetails = clientMatches.map((match: any) => {
       console.log(`Looking for VC with name: "${match.vcName}"`);
-      console.log(`Available VC names:`, vcs.map((v: any) => v.fields['VC/Investor Name']).slice(0, 5));
-      const vc = vcs.find((v: any) => v.fields['VC/Investor Name'] === match.vcName);
-      console.log(`Found VC:`, vc ? 'YES' : 'NO');
-      console.log(`VC object:`, vc);
+      
+      // Enhanced keyword search to find VC record and website URL
+      const vc = vcs.find((v: any) => {
+        const vcName = v.fields['VC/Investor Name'];
+        const firmName = v.fields['Firm Name'];
+        
+        // Try exact match first
+        if (vcName === match.vcName) return true;
+        
+        // Try case-insensitive match
+        if (vcName?.toLowerCase() === match.vcName?.toLowerCase()) return true;
+        
+        // Try partial match (keyword search)
+        if (vcName?.toLowerCase().includes(match.vcName?.toLowerCase())) return true;
+        if (match.vcName?.toLowerCase().includes(vcName?.toLowerCase())) return true;
+        
+        // Try matching with firm name as well
+        if (firmName?.toLowerCase().includes(match.vcName?.toLowerCase())) return true;
+        if (match.vcName?.toLowerCase().includes(firmName?.toLowerCase())) return true;
+        
+        return false;
+      });
+      
+      console.log(`Found VC for "${match.vcName}":`, vc ? 'YES' : 'NO');
+      if (vc) {
+        console.log(`VC Details:`, {
+          name: vc.fields['VC/Investor Name'],
+          firm: vc.fields['Firm Name'],
+          website: vc.fields['Website URL']
+        });
+      }
+      
       const vcInvestor = vc ? airtableService.transformVCToInvestor(vc) : {
         id: null,
-        name: match.vcName, // Use the vcName as fallback
+        name: match.vcName,
         firm: '',
         email: null,
         phone: null,
         linkedin: null,
-        website: null,
+        website: null, // Will be null if not found in VC database
         investmentFocus: null,
         investmentStage: null,
         geography: null,
@@ -377,11 +405,15 @@ router.get("/matches", authenticateClient, async (req: Request, res: Response) =
         createdAt: null,
         updatedAt: null
       };
-      console.log(`Transformed vcInvestor:`, vcInvestor);
+      
+      console.log(`Final vcInvestor for "${match.vcName}":`, {
+        name: vcInvestor.name,
+        website: vcInvestor.website
+      });
+      
       return {
         ...match,
         vcInvestor: vcInvestor,
-        // Ensure reasoning fields are properly mapped
         matchReasoning: match.matchReasoning || match['Match Reasoning'],
         portfolioReasoning: match.portfolioReasoning || match['Match Reasoning (Portfolio)']
       };

@@ -161,6 +161,9 @@ export default function ClientDashboard() {
   const [currentReasoning, setCurrentReasoning] = useState<string | null>(null);
   const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
   const [currentPortfolioReasoning, setCurrentPortfolioReasoning] = useState<string | null>(null);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [selectedMatchForFeedback, setSelectedMatchForFeedback] = useState<ClientMatch | null>(null);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   const [, setLocation] = useLocation();
   const [profile, setProfile] = useState<ClientProfile | null>(null);
@@ -584,30 +587,42 @@ export default function ClientDashboard() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-                <img src="/images/1.png" alt="VentriLinks Logo" className="h-14 w-14 object-cover rounded-full mr-3 bg-white border border-gray-200" style={{objectPosition:'center'}} />
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">VentriLinks Client Portal</h1>
-                {profile && (
-                  <p className="text-sm text-gray-600">{profile.companyName}</p>
-                )}
-              </div>
+            {/* VentriLinks Logo and Name - Clickable Home Link */}
+            <div 
+              className="flex items-center cursor-pointer" 
+              onClick={() => {
+                setLocation('/');
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
+              }}
+            >
+              <img 
+                src="/images/1.png" 
+                alt="VentriLinks Logo" 
+                className="h-10 w-10 mr-2 rounded-full bg-white border border-gray-200 object-cover object-center" 
+                style={{minWidth:'40px'}} 
+              />
+              <h1 className="text-xl font-bold text-primary hover:text-accent transition-colors">
+                VentriLinks
+              </h1>
             </div>
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" onClick={() => setLocation('/')}>
-                  Back to Main Site
-                </Button>
-                <Button variant="outline" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-                <Button variant="outline" onClick={loadDashboardData}>
-                  Refresh Matches
-                </Button>
-                <Button variant="outline" onClick={forceShowResults}>
-                  Show Results (Debug)
-                </Button>
-              </div>
+            
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" onClick={() => {
+                setLocation('/');
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
+              }}>
+                Back to Home
+              </Button>
+              {/* Other header buttons */}
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -710,10 +725,10 @@ export default function ClientDashboard() {
 
           {dashboardState === 'results-ready' && (
             <>
-              {/* Section Title */}
+              {/* Section Title and Feedback Invitation */}
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-primary mb-4">Top Matched Investors (Up to 50)</h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
+                <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
                   If any matches seem off, please let us know which ones and why—your input helps us improve our matching algorithm.
                 </p>
               </div>
@@ -721,20 +736,43 @@ export default function ClientDashboard() {
               {/* Matches Grid */}
               <div className="matches-grid grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto p-5">
                 {matches.map((match) => {
-                  // === RENDERING MATCH REASONING ===
-                  console.log("=== RENDERING MATCH REASONING ===");
-                  console.log("Profile reasoning:", match.matchReasoning || (match as any)["Match Reasoning"]);
-                  console.log("Portfolio reasoning:", match.portfolioReasoning || (match as any)["Match Reasoning (Portfolio)"]);
                   return (
                     <Card key={match.id} className="hover:shadow-lg transition-shadow">
                       <CardContent>
                         <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
-                          <h3 className="text-lg font-bold mb-1">{match.vcInvestor?.name || match.vcName || "Unknown VC"}</h3>
+                          {/* VC Name as Hyperlink to Website */}
+                          <h3 className="text-lg font-bold mb-1">
+                            {match.vcInvestor?.website ? (
+                              <a 
+                                href={match.vcInvestor.website.startsWith('http') ? match.vcInvestor.website : `https://${match.vcInvestor.website}`}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold"
+                                title={`Visit ${match.vcInvestor?.name || match.vcName} website`}
+                              >
+                                {match.vcInvestor?.name || match.vcName || "Unknown VC"}
+                              </a>
+                            ) : (
+                              <span className="text-gray-900">{match.vcInvestor?.name || match.vcName || "Unknown VC"}</span>
+                            )}
+                          </h3>
                           <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
                           <div className="match-info mb-3">
                             <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
                             <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
                             <p>Geography: {match.vcInvestor?.geography || "US"}</p>
+                            {match.vcInvestor?.website && (
+                              <p className="text-sm text-blue-600 mt-2">
+                                🌐 <a 
+                                  href={match.vcInvestor.website.startsWith('http') ? match.vcInvestor.website : `https://${match.vcInvestor.website}`}
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                >
+                                  Visit Website
+                                </a>
+                              </p>
+                            )}
                           </div>
                           <div className="match-actions flex flex-col gap-3 items-start">
                             {(match.matchReasoning || match.portfolioReasoning) && (
@@ -742,11 +780,10 @@ export default function ClientDashboard() {
                                 href="#"
                                 onClick={e => { 
                                   e.preventDefault(); 
-                                  // Combine both reasoning types into one comprehensive explanation
                                   const combinedReasoning = [
-                                    match.matchReasoning,
-                                    match.portfolioReasoning && `\n\nPortfolio Analysis:\n${match.portfolioReasoning}`
-                                  ].filter(Boolean).join('');
+                                    match.matchReasoning && `Match Analysis:\n${match.matchReasoning}`,
+                                    match.portfolioReasoning && `\nPortfolio Analysis:\n${match.portfolioReasoning}`
+                                  ].filter(Boolean).join('\n');
                                   openMatchReasoning(combinedReasoning);
                                 }}
                                 className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
@@ -754,126 +791,85 @@ export default function ClientDashboard() {
                                 <span>🧬</span> Why this match?
                               </a>
                             )}
-                            {match.vcInvestor?.website && (
-                              <a
-                                href={match.vcInvestor.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
-                              >
-                                <span>🌐</span> Visit {match.vcInvestor.name} Website
-                              </a>
-                            )}
+                            {/* Leave Feedback Button */}
+                            <Button
+                              onClick={() => openFeedbackDialog(match)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
+                              size="sm"
+                            >
+                              <span>💬</span> Leave Feedback
+                            </Button>
                           </div>
-                  </div>
-                </CardContent>
-              </Card>
-                );
-              })}
-        </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             </>
           )}
 
-          {dashboardState === 'results-ready' && matches.length === 0 && (
-            <Card className="text-center py-12">
-              <CardContent>
-                <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No matches available yet</h3>
-                <p className="text-gray-600">
-                  Your VentriLinks team is still working on finding the perfect VC matches for your company.
-                  You'll see them here once they're ready.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-        {matches.length === 0 && (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No matches yet</h3>
-              <p className="text-gray-600">
-                Your VentriLinks team will assign VC matches to your company soon.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        </div>
       </div>
 
-      {/* Progress Update Dialog */}
-      <Dialog open={progressDialogOpen} onOpenChange={setProgressDialogOpen}>
-        <DialogContent>
+      {/* Feedback Dialog */}
+      <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Update Outreach Progress</DialogTitle>
+            <DialogTitle>Match Feedback</DialogTitle>
             <DialogDescription>
-              Track your progress with {selectedMatch?.vcInvestor.name}
+              Help us improve our algorithm by sharing your thoughts about this match with {selectedMatchForFeedback?.vcInvestor?.name || selectedMatchForFeedback?.vcName}
             </DialogDescription>
           </DialogHeader>
-          {selectedMatch && (
+          {selectedMatchForFeedback && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Status</label>
+                <label className="text-sm font-medium mb-2 block">How good is this match?</label>
                 <Select 
-                  defaultValue={selectedMatch.progress?.status || 'not_contacted'}
-                  onValueChange={(value) => {
-                    setSelectedMatch({
-                      ...selectedMatch,
-                      progress: {
-                        ...selectedMatch.progress,
-                        status: value
-                      } as OutreachProgress
-                    });
-                  }}
+                  value={feedbackForm.matchQuality}
+                  onValueChange={(value) => setFeedbackForm(prev => ({ ...prev, matchQuality: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select match quality..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="Good Match">Good Match</SelectItem>
+                    <SelectItem value="Poor Match">Poor Match</SelectItem>
+                    <SelectItem value="Maybe">Maybe</SelectItem>
+                    <SelectItem value="Not Sure">Not Sure</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <label className="text-sm font-medium">Notes</label>
+                <label className="text-sm font-medium mb-2 block">Additional feedback (optional)</label>
                 <Textarea
-                  placeholder="Add notes about your outreach..."
-                  value={selectedMatch.progress?.notes || ''}
-                  onChange={(e) => {
-                    setSelectedMatch({
-                      ...selectedMatch,
-                      progress: {
-                        ...selectedMatch.progress,
-                        notes: e.target.value
-                      } as OutreachProgress
-                    });
-                  }}
+                  placeholder="Tell us why this match works or doesn't work for your startup..."
+                  value={feedbackForm.feedbackText}
+                  onChange={(e) => setFeedbackForm(prev => ({ ...prev, feedbackText: e.target.value }))}
+                  rows={4}
                 />
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setProgressDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button 
-                  onClick={() => updateProgress(
-                    selectedMatch.id, 
-                    selectedMatch.progress?.status || 'not_contacted',
-                    selectedMatch.progress?.notes || ''
+                  onClick={() => submitFeedback(
+                    selectedMatchForFeedback.id.toString(), 
+                    feedbackForm.matchQuality,
+                    feedbackForm.feedbackText
                   )}
-                  disabled={updatingProgress}
+                  disabled={submittingFeedback || !feedbackForm.matchQuality}
                 >
-                  {updatingProgress ? (
+                  {submittingFeedback ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Updating...
+                      Submitting...
                     </>
                   ) : (
-                    'Update Progress'
+                    'Submit Feedback'
                   )}
                 </Button>
               </div>
@@ -882,20 +878,23 @@ export default function ClientDashboard() {
         </DialogContent>
       </Dialog>
 
-        {/* Match Reasoning Modal - Updated title */}
-        <Dialog open={reasoningModalOpen} onOpenChange={setReasoningModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Match Analysis & Portfolio Insights</DialogTitle>
-            </DialogHeader>
-            <div className="text-blue-900 whitespace-pre-line text-base leading-relaxed">
-              {currentReasoning}
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button variant="secondary" onClick={() => setReasoningModalOpen(false)}>
-                Close
-              </Button>
-            </div>
+      {/* Match Reasoning Modal */}
+      <Dialog open={reasoningModalOpen} onOpenChange={setReasoningModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete Match Analysis</DialogTitle>
+            <DialogDescription>
+              Comprehensive analysis including match reasoning and portfolio insights
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-blue-900 whitespace-pre-line text-base leading-relaxed max-h-96 overflow-y-auto">
+            {currentReasoning}
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button variant="secondary" onClick={() => setReasoningModalOpen(false)}>
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

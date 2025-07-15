@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { User, Database, Brain, FileText } from "lucide-react";
+import { FileText, Database, Brain } from "lucide-react";
 
 const steps = [
 	{
@@ -47,7 +47,7 @@ export default function HowItWorks() {
 					</h2>
 					<p className="text-xl text-muted-foreground max-w-3xl mx-auto">
 						Our AI-powered platform streamlines the connection between biotech
-						initiators and capital providers
+						innovators and capital providers
 					</p>
 				</motion.div>
 

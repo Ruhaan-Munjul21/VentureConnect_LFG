@@ -275,18 +275,42 @@ export default function GetMatched() {
   // Always render the form, but show warning if incomplete
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Simple header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">VentriLinks</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">
-              Welcome, {user.email}
-            </span>
-            <button onClick={handleLogout} className="text-blue-600 hover:text-blue-700">Sign out</button>
+      {/* Header with VentriLinks logo and navigation */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* VentriLinks Logo and Name - Clickable Home Link */}
+            <div 
+              className="flex items-center cursor-pointer" 
+              onClick={() => {
+                setLocation('/');
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
+              }}
+            >
+              <img 
+                src="/images/1.png" 
+                alt="VentriLinks Logo" 
+                className="h-10 w-10 mr-2 rounded-full bg-white border border-gray-200 object-cover object-center" 
+                style={{minWidth:'40px'}} 
+              />
+              <h1 className="text-xl font-bold text-primary hover:text-accent transition-colors">
+                VentriLinks
+              </h1>
+            </div>
+            
+            <Button variant="outline" onClick={() => {
+                setLocation('/');
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
+              }}>
+              Back to Home
+            </Button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Warning if form incomplete */}
       {formStatus && !formStatus.isComplete && (

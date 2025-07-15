@@ -290,128 +290,36 @@ export default function VCTimeline() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                onClick={() => setLocation('/client/dashboard')}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
+            {/* VentriLinks Logo and Name - Clickable Home Link */}
+            <div 
+              className="flex items-center cursor-pointer mr-4" 
+              onClick={() => setLocation('/')}
+            >
+              <img 
+                src="/images/1.png" 
+                alt="VentriLinks Logo" 
+                className="h-10 w-10 mr-2 rounded-full bg-white border border-gray-200 object-cover object-center" 
+                style={{minWidth:'40px'}} 
+              />
+              <h1 className="text-xl font-bold text-primary hover:text-accent transition-colors">
+                VentriLinks
+              </h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">VC Timeline</h1>
                 <p className="text-sm text-gray-600">{match.vcInvestor.name} - {match.vcInvestor.firm}</p>
               </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setLocation('/client/dashboard')}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
             </div>
-            <Dialog open={showAddActivity} onOpenChange={setShowAddActivity}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Activity
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Add Timeline Activity</DialogTitle>
-                  <DialogDescription>
-                    Record a new interaction or milestone with this VC
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={addActivity} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Activity Type</label>
-                      <Select value={newActivity.activityType} onValueChange={(value) => setNewActivity({...newActivity, activityType: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select activity type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ACTIVITY_TYPES.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Status</label>
-                      <Select value={newActivity.status} onValueChange={(value) => setNewActivity({...newActivity, status: value})}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {STATUS_OPTIONS.map((status) => (
-                            <SelectItem key={status.value} value={status.value}>
-                              {status.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Title</label>
-                    <Input
-                      value={newActivity.title}
-                      onChange={(e) => setNewActivity({...newActivity, title: e.target.value})}
-                      placeholder="Brief title for this activity"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Description</label>
-                    <Textarea
-                      value={newActivity.description}
-                      onChange={(e) => setNewActivity({...newActivity, description: e.target.value})}
-                      placeholder="Detailed description of what happened"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Activity Date</label>
-                      <Input
-                        type="date"
-                        value={newActivity.activityDate}
-                        onChange={(e) => setNewActivity({...newActivity, activityDate: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Next Action Date</label>
-                      <Input
-                        type="date"
-                        value={newActivity.nextActionDate}
-                        onChange={(e) => setNewActivity({...newActivity, nextActionDate: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Next Action</label>
-                    <Input
-                      value={newActivity.nextAction}
-                      onChange={(e) => setNewActivity({...newActivity, nextAction: e.target.value})}
-                      placeholder="What should happen next?"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Notes</label>
-                    <Textarea
-                      value={newActivity.notes}
-                      onChange={(e) => setNewActivity({...newActivity, notes: e.target.value})}
-                      placeholder="Additional notes or observations"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={() => setShowAddActivity(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">Add Activity</Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
       </header>
@@ -692,4 +600,4 @@ export default function VCTimeline() {
       </Dialog>
     </div>
   );
-} 
+}

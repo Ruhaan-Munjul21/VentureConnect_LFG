@@ -331,10 +331,20 @@ export default function AdminDashboard() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Building2 className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">VentriLinks Admin</span>
+            {/* VentriLinks Logo and Name - Clickable Home Link */}
+            <div 
+              className="flex items-center cursor-pointer" 
+              onClick={() => window.location.href = '/'}
+            >
+              <img 
+                src="/images/1.png" 
+                alt="VentriLinks Logo" 
+                className="h-8 w-8 mr-2 rounded-full bg-white border border-gray-200 object-cover object-center" 
+              />
+              <span className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors">VentriLinks</span>
+              <span className="ml-2 text-lg text-gray-600">Admin</span>
             </div>
+            
             <div className="flex space-x-3">
               <button
                 onClick={loadData}
@@ -360,7 +370,9 @@ export default function AdminDashboard() {
               </button>
               <a href="/admin/clients" className="text-blue-600 hover:text-blue-700">Client Management</a>
               <a href="/airtable-test" className="text-blue-600 hover:text-blue-700">Test Airtable</a>
-              <a href="/" className="text-blue-600 hover:text-blue-700">← Back to Home</a>
+              <a href="/" className="text-blue-600 hover:text-blue-700 flex items-center">
+                ← Back to Home
+              </a>
             </div>
           </div>
         </div>

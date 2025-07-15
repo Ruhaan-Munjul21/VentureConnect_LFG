@@ -463,19 +463,26 @@ export default function AdminClientManagement() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Building2 className="h-8 w-8 text-blue-600 mr-3" />
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">Client Management</h1>
-                <p className="text-sm text-gray-600">Manage startup companies and their VC access</p>
-              </div>
+            {/* VentriLinks Logo and Name - Clickable Home Link */}
+            <div 
+              className="flex items-center cursor-pointer" 
+              onClick={() => window.location.href = '/'}
+            >
+              <img 
+                src="/images/1.png" 
+                alt="VentriLinks Logo" 
+                className="h-8 w-8 mr-2 rounded-full bg-white border border-gray-200 object-cover object-center" 
+              />
+              <span className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">VentriLinks</span>
+              <span className="ml-2 text-lg text-gray-600">Client Management</span>
             </div>
+            
             <div className="flex items-center space-x-4">
               <Button onClick={async () => { setLoading(true); await loadData(); setLoading(false); }} disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />} Refresh
               </Button>
-              <Button onClick={() => window.location.href = '/admin'}>
-                Back to Admin
+              <Button onClick={() => window.location.href = '/'} variant="outline">
+                Back to Home
               </Button>
             </div>
           </div>
@@ -1036,4 +1043,4 @@ export default function AdminClientManagement() {
       </Dialog>
     </div>
   );
-} 
+}

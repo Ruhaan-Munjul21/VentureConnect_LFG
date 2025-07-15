@@ -3,8 +3,6 @@ import { motion } from "framer-motion";
 import { Linkedin, Mail } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
-import Navigation from "@/components/layout/navigation";
-import Footer from "@/components/layout/footer";
 
 const teamMembers = [
 	{
@@ -54,12 +52,10 @@ const advisors = [
 export default function Team() {
 	const [, setLocation] = useLocation();
 
-	// Force scroll to top when component mounts
 	useEffect(() => {
 		window.scrollTo(0, 0);
 	}, []);
 
-	// Function to handle navigation to home with scroll to top
 	const navigateToHome = () => {
 		setLocation('/');
 		setTimeout(() => {
@@ -69,11 +65,9 @@ export default function Team() {
 
 	return (
 		<div className="min-h-screen bg-gray-50">
-			{/* Header with VentriLinks logo and navigation */}
 			<header className="bg-white shadow-sm border-b">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div className="flex justify-between items-center h-16">
-						{/* VentriLinks Logo and Name - Clickable */}
 						<div
 							className="flex items-center cursor-pointer"
 							onClick={navigateToHome}
@@ -88,7 +82,6 @@ export default function Team() {
 								VentriLinks
 							</h1>
 						</div>
-
 						<Button variant="outline" onClick={navigateToHome}>
 							Back to Home
 						</Button>
@@ -96,7 +89,6 @@ export default function Team() {
 				</div>
 			</header>
 
-			{/* Team Content - Starts at top */}
 			<div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 				<div className="text-center mb-12">
 					<h1 className="text-4xl font-bold text-primary mb-4">Meet Our Team</h1>
@@ -108,20 +100,89 @@ export default function Team() {
 				{/* Team Members Section */}
 				<section className="mb-16">
 					<h2 className="text-3xl font-bold text-primary mb-8 text-center">Leadership Team</h2>
-					<div className="bg-white rounded-lg shadow-lg p-8">
-						<p className="text-center text-muted-foreground">
-							Team member profiles will be displayed here
-						</p>
+					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+						{teamMembers.map((member, index) => (
+							<motion.div
+								key={index}
+								className="bg-white rounded-xl shadow-lg overflow-hidden group hover:shadow-xl transition-shadow duration-300"
+								initial={{ opacity: 0, y: 30 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.6, delay: index * 0.1 }}
+							>
+								<div className="aspect-square overflow-hidden bg-gray-100">
+									<img 
+										src={member.image} 
+										alt={member.name}
+										className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+										onError={(e) => {
+											e.currentTarget.src = '/images/placeholder-person.jpg';
+										}}
+									/>
+								</div>
+								<div className="p-6">
+									<h3 className="text-xl font-bold text-primary mb-2">{member.name}</h3>
+									<p className="text-accent font-medium mb-3">{member.title}</p>
+									<p className="text-gray-600 text-sm leading-relaxed mb-4">
+										{member.bio}
+									</p>
+									<div className="flex space-x-3">
+										{member.linkedin && (
+											<a 
+												href={member.linkedin}
+												target="_blank" 
+												rel="noopener noreferrer"
+												className="text-blue-600 hover:text-blue-800 transition-colors"
+											>
+												<Linkedin className="w-5 h-5" />
+											</a>
+										)}
+										{member.email && (
+											<a 
+												href={`mailto:${member.email}`}
+												className="text-gray-600 hover:text-gray-800 transition-colors"
+											>
+												<Mail className="w-5 h-5" />
+											</a>
+										)}
+									</div>
+								</div>
+							</motion.div>
+						))}
 					</div>
 				</section>
 
 				{/* Advisors Section */}
 				<section id="advisors" className="mb-16">
 					<h2 className="text-3xl font-bold text-primary mb-8 text-center">Advisors</h2>
-					<div className="bg-white rounded-lg shadow-lg p-8">
-						<p className="text-center text-muted-foreground">
-							Advisor profiles will be displayed here
-						</p>
+					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+						{advisors.map((advisor, index) => (
+							<motion.div
+								key={index}
+								className="bg-white rounded-xl shadow-lg overflow-hidden group hover:shadow-xl transition-shadow duration-300"
+								initial={{ opacity: 0, y: 30 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.6, delay: (teamMembers.length + index) * 0.1 }}
+							>
+								<div className="aspect-square overflow-hidden bg-gray-100">
+									<img 
+										src={advisor.image} 
+										alt={advisor.name}
+										className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+										onError={(e) => {
+											e.currentTarget.src = '/images/placeholder-person.jpg';
+										}}
+									/>
+								</div>
+								<div className="p-6">
+									<h3 className="text-xl font-bold text-primary mb-2">{advisor.name}</h3>
+									<p className="text-accent font-medium mb-1">{advisor.title}</p>
+									<p className="text-gray-500 text-sm mb-3">{advisor.company}</p>
+									<p className="text-gray-600 text-sm leading-relaxed">
+										{advisor.bio}
+									</p>
+								</div>
+							</motion.div>
+						))}
 					</div>
 				</section>
 			</div>

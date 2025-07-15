@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Team from "@/pages/team";
-import Contact from "@/pages/contact";
 import GetMatched from "@/pages/get-matched";
 import AdminDashboard from "@/pages/admin";
 import AdminClientManagement from "@/pages/admin-client-management";
@@ -22,13 +21,12 @@ function Router() {
   
   console.log('=== ROUTER DEBUG ===');
   console.log('Current location:', window.location.pathname);
-  console.log('Available routes: /, /team, /contact, /get-matched, /admin, /admin/clients, /airtable-test, /client-test, /client/login, /client/dashboard, /client-portal, /test, /vc-timeline');
+  console.log('Available routes: /, /team, /get-matched, /admin, /admin/clients, /airtable-test, /client-test, /client/login, /client/dashboard, /client-portal, /test, /vc-timeline');
   
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/team" component={Team} />
-      <Route path="/contact" component={Contact} />
       <Route path="/get-matched" component={GetMatched} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/clients" component={AdminClientManagement} />

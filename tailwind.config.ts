@@ -2,7 +2,13 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./client/index.html",
+    "./client/src/**/*.{js,jsx,ts,tsx}",
+    // Exclude test files and node_modules for faster scanning
+    "!./client/src/**/*.test.{js,jsx,ts,tsx}",
+    "!./node_modules/**/*",
+  ],
   theme: {
     extend: {
       borderRadius: {
@@ -61,6 +67,7 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        "accent-purple": "#8b5cf6",
       },
       keyframes: {
         "accordion-down": {
@@ -79,10 +86,15 @@ export default {
             height: "0",
           },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-20px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "float": "float 6s ease-in-out infinite",
       },
     },
   },

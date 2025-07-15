@@ -36,8 +36,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            AI-matched capital connections for early-stage drug development startups. 
-            Find the right investors, faster.
+            AI-powered investor matching for biotech startups. Connect with the right capital—faster.
           </motion.p>
           
           <motion.div 
@@ -78,9 +77,9 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.8 }}
           >
             <div className="inline-flex items-center bg-white/90 rounded-full px-6 py-3 shadow-lg">
-              <img src="/images/westfield.png" alt="Westfield Bio Ventures" className="w-8 h-8 rounded-full object-contain mr-3 bg-white border border-gray-200" />
+              <img src="/images/westfield.png" alt="Westfield BioVentures" className="w-8 h-8 rounded-full object-contain mr-3 bg-white border border-gray-200" />
               <span className="text-sm font-medium text-muted-foreground">
-                Backed by <span className="text-primary font-semibold">WestField Bio Ventures</span>
+                Backed by <span className="text-primary font-semibold">Westfield BioVentures</span>
               </span>
             </div>
           </motion.div>

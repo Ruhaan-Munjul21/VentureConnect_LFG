@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { Button } from '../components/ui/button';
 
 export default function GetMatched() {
   const [user, setUser] = useState<any>(null);

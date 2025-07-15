@@ -164,6 +164,10 @@ export default function ClientDashboard() {
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedMatchForFeedback, setSelectedMatchForFeedback] = useState<ClientMatch | null>(null);
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({
+    matchQuality: '',
+    feedbackText: ''
+  });
 
   const [, setLocation] = useLocation();
   const [profile, setProfile] = useState<ClientProfile | null>(null);

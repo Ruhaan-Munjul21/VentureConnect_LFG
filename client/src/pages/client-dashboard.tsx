@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +27,6 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
-import { useRef } from 'react';
 
 
 interface VCInvestor {
@@ -855,6 +854,7 @@ export default function ClientDashboard() {
               </div>
             </>
           )}
+
         </div>
       </div>
 

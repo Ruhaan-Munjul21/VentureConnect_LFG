@@ -27,7 +27,6 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
-import { useRef } from 'react';
 
 
 interface VCInvestor {
@@ -782,74 +781,76 @@ export default function ClientDashboard() {
 
               {/* Matches Grid */}
               <div className="matches-grid grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto p-5">
-                {matches.map((match) => (
-                  <Card key={match.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent>
-                      <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
-                        {/* VC Name as Hyperlink to Website */}
-                        <h3 className="text-lg font-bold mb-1">
-                          {match.vcInvestor?.website ? (
-                            <a 
-                              href={match.vcInvestor.website.startsWith('http') ? match.vcInvestor.website : `https://${match.vcInvestor.website}`}
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold"
-                              title={`Visit ${match.vcInvestor?.name || match.vcName} website`}
-                            >
-                              {match.vcInvestor?.name || match.vcName || "Unknown VC"}
-                            </a>
-                          ) : (
-                            <span className="text-gray-900">{match.vcInvestor?.name || match.vcName || "Unknown VC"}</span>
-                          )}
-                        </h3>
-                        <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
-                        <div className="match-info mb-3">
-                          <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
-                          <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
-                          <p>Geography: {match.vcInvestor?.geography || "US"}</p>
-                          {match.vcInvestor?.website && (
-                            <p className="text-sm text-blue-600 mt-2">
-                              🌐 <a 
+                {matches.map((match) => {
+                  return (
+                    <Card key={match.id} className="hover:shadow-lg transition-shadow">
+                      <CardContent>
+                        <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
+                          {/* VC Name as Hyperlink to Website */}
+                          <h3 className="text-lg font-bold mb-1">
+                            {match.vcInvestor?.website ? (
+                              <a 
                                 href={match.vcInvestor.website.startsWith('http') ? match.vcInvestor.website : `https://${match.vcInvestor.website}`}
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="hover:underline"
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold"
+                                title={`Visit ${match.vcInvestor?.name || match.vcName} website`}
                               >
-                                Visit Website
+                                {match.vcInvestor?.name || match.vcName || "Unknown VC"}
                               </a>
-                            </p>
-                          )}
-                        </div>
-                        <div className="match-actions flex flex-col gap-3 items-start">
-                          {(match.matchReasoning || match.portfolioReasoning) && (
-                            <a
-                              href="#"
-                              onClick={e => { 
-                                e.preventDefault(); 
-                                const combinedReasoning = [
-                                  match.matchReasoning && `Match Analysis:\n${match.matchReasoning}`,
-                                  match.portfolioReasoning && `\nPortfolio Analysis:\n${match.portfolioReasoning}`
-                                ].filter(Boolean).join('\n');
-                                openMatchReasoning(combinedReasoning);
-                              }}
-                              className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
+                            ) : (
+                              <span className="text-gray-900">{match.vcInvestor?.name || match.vcName || "Unknown VC"}</span>
+                            )}
+                          </h3>
+                          <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
+                          <div className="match-info mb-3">
+                            <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
+                            <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
+                            <p>Geography: {match.vcInvestor?.geography || "US"}</p>
+                            {match.vcInvestor?.website && (
+                              <p className="text-sm text-blue-600 mt-2">
+                                🌐 <a 
+                                  href={match.vcInvestor.website.startsWith('http') ? match.vcInvestor.website : `https://${match.vcInvestor.website}`}
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                >
+                                  Visit Website
+                                </a>
+                              </p>
+                            )}
+                          </div>
+                          <div className="match-actions flex flex-col gap-3 items-start">
+                            {(match.matchReasoning || match.portfolioReasoning) && (
+                              <a
+                                href="#"
+                                onClick={e => { 
+                                  e.preventDefault(); 
+                                  const combinedReasoning = [
+                                    match.matchReasoning && `Match Analysis:\n${match.matchReasoning}`,
+                                    match.portfolioReasoning && `\nPortfolio Analysis:\n${match.portfolioReasoning}`
+                                  ].filter(Boolean).join('\n');
+                                  openMatchReasoning(combinedReasoning);
+                                }}
+                                className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
+                              >
+                                <span>🧬</span> Why this match?
+                              </a>
+                            )}
+                            {/* Leave Feedback Button */}
+                            <Button
+                              onClick={() => openFeedbackDialog(match)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
+                              size="sm"
                             >
-                              <span>🧬</span> Why this match?
-                            </a>
-                          )}
-                          {/* Leave Feedback Button */}
-                          <Button
-                            onClick={() => openFeedbackDialog(match)}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
-                            size="sm"
-                          >
-                            <span>💬</span> Leave Feedback
-                          </Button>
+                              <span>💬</span> Leave Feedback
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </>
           )}

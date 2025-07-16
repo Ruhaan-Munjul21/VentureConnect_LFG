@@ -64,7 +64,7 @@ app.get('/api/client/matches', authenticateClient, async (req, res) => {
           email: match.vc_email,
           phone: match.vc_phone,
           linkedin: match.linkedin,
-          website: match.website, // This should include the website data
+          website: match.website,
           investmentFocus: match.investment_focus,
           investmentStage: match.investment_stage,
           geography: match.geography,

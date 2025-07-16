@@ -10,7 +10,7 @@ async function syncVCInvestors() {
     console.log('=== SYNCING VC INVESTORS FROM AIRTABLE ===');
     
     // Fetch all records from Airtable
-    const records = await airtableBase('VC/Investors').select({
+    const records = await airtableBase('VC Database').select({
       view: 'Grid view'
     }).all();
     
@@ -19,65 +19,97 @@ async function syncVCInvestors() {
     let syncCount = 0;
     let websiteCount = 0;
     
+    // Check the specific VCs we know are missing websites
+    const problematicVCs = ['ATEM Capital', 'Bioqube Ventures', 'Bios Partners', 'Brainchild Holdings'];
+    
     for (const record of records) {
       const fields = record.fields;
       const vcName = fields['VC/Investor Name'] || '';
-      const website = fields['Website URL'] || fields['Website'] || fields['website'] || '';
+      const website = fields['Website URL'] || '';
       
-      // Debug each VC sync
-      console.log(`Syncing VC: ${vcName}`);
-      console.log(`  - Website from Airtable: "${website}" (field name: Website URL)`);
-      console.log(`  - All Airtable fields:`, Object.keys(fields));
+      // Special logging for problematic VCs
+      if (problematicVCs.includes(vcName)) {
+        console.log(`🔍 DEBUGGING PROBLEMATIC VC: ${vcName}`);
+        console.log(`  - Airtable Record ID: ${record.id}`);
+        console.log(`  - Website URL field: "${website}"`);
+        console.log(`  - All fields:`, Object.keys(fields));
+        console.log(`  - Full record:`, fields);
+      }
+      
+      // Debug every 10th VC for general pattern
+      if (syncCount % 10 === 0) {
+        console.log(`Syncing VC #${syncCount + 1}: ${vcName}`);
+        console.log(`  - Website: "${website || 'EMPTY'}"`);
+      }
       
       if (website) {
         websiteCount++;
-        console.log(`  ✅ Has website: ${website}`);
-      } else {
-        console.log(`  ❌ No website data`);
       }
       
-      // Insert or update VC investor
-      await db.run(`
-        INSERT OR REPLACE INTO vc_investors (
-          airtable_id,
-          name,
-          firm,
-          email,
-          phone,
-          linkedin,
-          website,
-          investment_focus,
-          investment_stage,
-          geography,
-          portfolio_size,
-          description,
-          updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        record.id,
-        vcName,
-        fields['Firm'] || '',
-        fields['Email'] || '',
-        fields['Phone'] || '',
-        fields['LinkedIn'] || '',
-        website, // Use the website variable we extracted
-        fields['Investment Focus'] || '',
-        fields['Investment Stage'] || '',
-        fields['Geography'] || '',
-        fields['Portfolio Size'] || '',
-        fields['Description'] || '',
-        new Date().toISOString()
-      ]);
+      // Insert or update VC investor with explicit debugging
+      try {
+        await db.run(`
+          INSERT OR REPLACE INTO vc_investors (
+            airtable_id,
+            name,
+            firm,
+            email,
+            phone,
+            linkedin,
+            website,
+            investment_focus,
+            investment_stage,
+            geography,
+            portfolio_size,
+            description,
+            updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          record.id,
+          vcName,
+          fields['Firm'] || '',
+          fields['Email'] || '',
+          fields['Phone'] || '',
+          fields['LinkedIn'] || '',
+          website, // This should be the website URL
+          fields['Investment Focus'] || '',
+          fields['Investment Stage'] || '',
+          fields['Geography'] || '',
+          fields['Portfolio Size'] || '',
+          fields['Description'] || '',
+          new Date().toISOString()
+        ]);
+        
+        // Verify what was actually inserted for problematic VCs
+        if (problematicVCs.includes(vcName)) {
+          const dbRecord = await db.get(`SELECT name, website FROM vc_investors WHERE name = ?`, [vcName]);
+          console.log(`  ✅ Database after insert: ${dbRecord?.name} -> website: "${dbRecord?.website || 'NULL'}"`);
+        }
+        
+      } catch (dbError) {
+        console.error(`❌ Database error for ${vcName}:`, dbError);
+      }
       
       syncCount++;
     }
     
     console.log(`✅ VC Investors sync completed: ${syncCount} VCs synced, ${websiteCount} with websites`);
     
-    // Check what's actually in the database now
-    const dbVCs = await db.all(`SELECT name, website FROM vc_investors WHERE website IS NOT NULL AND website != '' LIMIT 10`);
-    console.log('=== VCs WITH WEBSITES IN DATABASE ===');
-    dbVCs.forEach(vc => {
+    // Check what's actually in the database for the problematic VCs
+    console.log('=== CHECKING PROBLEMATIC VCs IN DATABASE ===');
+    for (const vcName of problematicVCs) {
+      const dbRecord = await db.get(`SELECT name, website, airtable_id FROM vc_investors WHERE name = ?`, [vcName]);
+      if (dbRecord) {
+        console.log(`${vcName}: website="${dbRecord.website || 'NULL'}" (ID: ${dbRecord.airtable_id})`);
+      } else {
+        console.log(`${vcName}: NOT FOUND IN DATABASE`);
+      }
+    }
+    
+    // Show sample of VCs with websites
+    const withWebsites = await db.all(`SELECT name, website FROM vc_investors WHERE website IS NOT NULL AND website != '' LIMIT 10`);
+    console.log('=== SAMPLE VCs WITH WEBSITES IN DATABASE ===');
+    withWebsites.forEach(vc => {
       console.log(`${vc.name}: ${vc.website}`);
     });
     

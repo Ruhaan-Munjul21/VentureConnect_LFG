@@ -730,39 +730,34 @@ export default function ClientDashboard() {
 
           {/* Dashboard State Content */}
           {dashboardState === 'form-incomplete' && (
-            (() => {
-              console.log('🎯 RENDERING FORM-INCOMPLETE UI');
-              return (
-                <div className="text-center py-12">
-                  <div className="max-w-md mx-auto">
-                    <Target className="h-16 w-16 text-blue-600 mx-auto mb-6" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      Ready to Find Your Matches?
-                    </h2>
-                    <p className="text-gray-600 mb-8">
-                      Fill out your startup details to get matched with the right investors.
-                    </p>
-                    {/* Show missing core fields */}
-                    {formStatus && (
-                      <div className="mb-4">
-                        <div className="font-semibold text-red-700">Missing Core Fields:</div>
-                        <ul className="text-red-600">
-                          {CORE_FIELDS.filter(f => (formStatus.missingFields || []).includes(f)).map(f => (
-                            <li key={f}>{f}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    <Button 
-                      onClick={() => setLocation('/get-matched')}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
-                    >
-                      Fill Out Startup Form
-                    </Button>
+            <div className="text-center py-12">
+              <div className="max-w-md mx-auto">
+                <Target className="h-16 w-16 text-blue-600 mx-auto mb-6" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Ready to Find Your Matches?
+                </h2>
+                <p className="text-gray-600 mb-8">
+                  Fill out your startup details to get matched with the right investors.
+                </p>
+                {/* Show missing core fields */}
+                {formStatus && (
+                  <div className="mb-4">
+                    <div className="font-semibold text-red-700">Missing Core Fields:</div>
+                    <ul className="text-red-600">
+                      {CORE_FIELDS.filter(f => (formStatus.missingFields || []).includes(f)).map(f => (
+                        <li key={f}>{f}</li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-              );
-            })()
+                )}
+                <Button 
+                  onClick={() => setLocation('/get-matched')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
+                >
+                  Fill Out Startup Form
+                </Button>
+              </div>
+            </div>
           )}
 
           {dashboardState === 'processing' && submissionTime && (
@@ -854,7 +849,6 @@ export default function ClientDashboard() {
               </div>
             </>
           )}
-        </div>
       </div>
 
       {/* Feedback Dialog */}

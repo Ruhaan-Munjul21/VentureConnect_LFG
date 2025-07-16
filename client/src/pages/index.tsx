@@ -1019,6 +1019,39 @@ export default function ClientDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 overflow-hidden">
+        {/* ...existing code... */}
+        
+        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+          <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+            Supercharge Your Biotech Fundraising
+          </h1>
+          <p className="text-xl sm:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Connect with the right VCs instantly using our AI-powered matching platform designed specifically for biotech startups
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <Button 
+              size="lg"
+              onClick={() => setLocation('/get-matched')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+            >
+              Get Matched
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => setLocation('/client/login')}
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+            >
+              Client Portal
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -260,20 +260,11 @@ export default function ClientDashboard() {
 
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-          console.log('Profile data loaded:', profileData.data);
-          console.log('=== PROFILE API RESPONSE DEBUG ===');
-          console.log('Profile response status:', profileRes.status);
-          console.log('Profile response headers:', profileRes.headers);
-          console.log('Profile raw data:', profileData);
-          console.log('Profile data type:', typeof profileData);
-          console.log('Profile data keys:', Object.keys(profileData || {}));
-          console.log('Profile data.data keys:', Object.keys(profileData.data || {}));
-          console.log('Profile company name:', profileData.data?.companyName);
-          console.log('Profile email:', profileData.data?.email);
+        console.log('Profile data loaded:', profileData.data);
         setProfile(profileData.data);
-        } else {
-          console.log('Profile request failed:', profileRes.status);
-          console.log('Profile error response:', await profileRes.text());
+      } else {
+        console.log('Profile request failed:', profileRes.status);
+        console.log('Profile error response:', await profileRes.text());
       }
 
       if (matchesRes.ok) {
@@ -283,16 +274,15 @@ export default function ClientDashboard() {
         console.log('Matches data array:', matchesData.data);
         console.log('Number of matches:', matchesData.data?.length || 0);
         
-        // Debug each match
+        // Debug each match and their website data
         if (matchesData.data && matchesData.data.length > 0) {
           matchesData.data.forEach((match: any, index: number) => {
             console.log(`Match ${index + 1}:`, {
               id: match.id,
-              vcName: match.vcName,
+              vcName: match.vcInvestor?.name || match.vcName,
+              vcWebsite: match.vcInvestor?.website,
               isUnlocked: match.isUnlocked,
-              clientAccess: match.clientAccess,
-              startupName: match.startupName,
-              fullMatch: match
+              fullVcInvestor: match.vcInvestor
             });
           });
         }
@@ -796,38 +786,48 @@ export default function ClientDashboard() {
                         {/* VC Name as Hyperlink to Website */}
                         <h3 className="text-lg font-bold mb-1">
                           {(() => {
-                            // Clean architecture: Extract VC data from pre-fetched match data
+                            // Extract VC data from match
                             const vcName = match.vcInvestor?.name || match.vcName || "Unknown VC";
                             const vcWebsite = match.vcInvestor?.website;
                             
-                            // Validate and format website URL
-                            const formatWebsiteUrl = (url: string | undefined): string | null => {
-                              if (!url) return null;
-                              
-                              const cleanUrl = url.trim();
-                              if (!cleanUrl) return null;
-                              
-                              // Add protocol if missing
-                              const formattedUrl = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
-                                ? cleanUrl 
-                                : `https://${cleanUrl}`;
-                              
-                              // Validate URL format
-                              try {
-                                new URL(formattedUrl);
-                                return formattedUrl;
-                              } catch {
-                                return null;
-                              }
-                            };
+                            // Force console output for debugging
+                            console.log(`🔍 DEBUGGING VC: ${vcName}`);
+                            console.log(`📧 Full match object:`, match);
+                            console.log(`🏢 vcInvestor:`, match.vcInvestor);
+                            console.log(`🌐 Website:`, vcWebsite);
                             
-                            const validWebsiteUrl = formatWebsiteUrl(vcWebsite);
+                            // Check if website exists and is valid
+                            if (!vcWebsite) {
+                              console.log(`❌ ${vcName}: NO WEBSITE DATA`);
+                              return (
+                                <span className="text-gray-900 font-bold" title="No website available">
+                                  {vcName}
+                                </span>
+                              );
+                            }
                             
-                            // Render VC name with hyperlink if valid URL exists
-                            if (validWebsiteUrl) {
+                            const cleanUrl = vcWebsite.trim();
+                            if (!cleanUrl) {
+                              console.log(`❌ ${vcName}: EMPTY WEBSITE`);
+                              return (
+                                <span className="text-gray-900 font-bold" title="No website available">
+                                  {vcName}
+                                </span>
+                              );
+                            }
+                            
+                            // Format URL
+                            const formattedUrl = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
+                              ? cleanUrl 
+                              : `https://${cleanUrl}`;
+                            
+                            // Validate URL
+                            try {
+                              new URL(formattedUrl);
+                              console.log(`✅ ${vcName}: VALID URL - ${formattedUrl}`);
                               return (
                                 <a 
-                                  href={validWebsiteUrl}
+                                  href={formattedUrl}
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold inline-flex items-center gap-1"
@@ -837,10 +837,10 @@ export default function ClientDashboard() {
                                   <Globe className="h-3 w-3 opacity-70" />
                                 </a>
                               );
-                            } else {
-                              // Fallback to plain text if no valid website
+                            } catch (error) {
+                              console.log(`❌ ${vcName}: INVALID URL - ${formattedUrl}`, error);
                               return (
-                                <span className="text-gray-900 font-bold" title="No website available">
+                                <span className="text-gray-900 font-bold" title="Invalid website URL">
                                   {vcName}
                                 </span>
                               );

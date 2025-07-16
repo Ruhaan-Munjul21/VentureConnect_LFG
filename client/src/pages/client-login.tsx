@@ -191,13 +191,14 @@ export default function ClientLogin() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <header className="bg-white shadow-sm border-b">
+      {/* Header with proper navigation */}
+      <div className="absolute top-0 left-0 right-0 bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* VentriLinks Logo and Name - Clickable Home Link */}
             <div 
-              className="flex items-center cursor-pointer" 
-              onClick={navigateToHome}
+              className="flex items-center cursor-pointer hover:opacity-80 transition-opacity" 
+              onClick={() => setLocation('/')}
             >
               <img 
                 src="/images/1.png" 
@@ -210,13 +211,23 @@ export default function ClientLogin() {
               </h1>
             </div>
             
-            <Button variant="outline" onClick={navigateToHome}>
-              Back to Home
-            </Button>
+            {/* Header Navigation Buttons */}
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLocation('/')}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Back to Home
+              </Button>
+            </div>
           </div>
         </div>
-      </header>
-      <div className="flex flex-col items-center w-full">
+      </div>
+
+      {/* Main content with proper spacing for fixed header */}
+      <div className="flex flex-col items-center w-full pt-20">
         <img src="/images/1.png" alt="VentriLinks Logo" className="h-28 w-28 mb-4 rounded-full bg-white border border-gray-200 object-cover" style={{minWidth:'112px', objectPosition:'center'}} />
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
@@ -306,12 +317,13 @@ export default function ClientLogin() {
             <div className="mt-6 text-center text-sm text-gray-600">
               <p>
                 Don't have access?{' '}
-                <a
-                  href="/get-matched"
-                  className="text-blue-600 hover:text-blue-800 font-medium"
+                <Button
+                  variant="link"
+                  onClick={() => setLocation('/get-matched')}
+                  className="text-blue-600 hover:text-blue-800 font-medium p-0 h-auto"
                 >
                   Apply for VentriLinks
-                </a>
+                </Button>
               </p>
             </div>
           </CardContent>

@@ -7,7 +7,7 @@ const airtableBase = new airtable.Base('appXXXXXXXXX'); // Replace with your bas
 // Function to sync VC investors from Airtable
 async function syncVCInvestors() {
   try {
-    console.log('=== SYNCING VC INVESTORS ===');
+    console.log('=== SYNCING VC INVESTORS FROM AIRTABLE ===');
     
     // Fetch all records from Airtable
     const records = await airtableBase('VC/Investors').select({
@@ -16,12 +16,25 @@ async function syncVCInvestors() {
     
     console.log(`Found ${records.length} VC records in Airtable`);
     
+    let syncCount = 0;
+    let websiteCount = 0;
+    
     for (const record of records) {
       const fields = record.fields;
+      const vcName = fields['VC/Investor Name'] || '';
+      const website = fields['Website URL'] || fields['Website'] || fields['website'] || '';
       
-      // Debug website field specifically
-      console.log(`Processing VC: ${fields['VC/Investor Name']}`);
-      console.log(`Website in Airtable: ${fields['Website URL'] || 'MISSING'}`);
+      // Debug each VC sync
+      console.log(`Syncing VC: ${vcName}`);
+      console.log(`  - Website from Airtable: "${website}" (field name: Website URL)`);
+      console.log(`  - All Airtable fields:`, Object.keys(fields));
+      
+      if (website) {
+        websiteCount++;
+        console.log(`  ✅ Has website: ${website}`);
+      } else {
+        console.log(`  ❌ No website data`);
+      }
       
       // Insert or update VC investor
       await db.run(`
@@ -42,12 +55,12 @@ async function syncVCInvestors() {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         record.id,
-        fields['VC/Investor Name'] || '',
+        vcName,
         fields['Firm'] || '',
         fields['Email'] || '',
         fields['Phone'] || '',
         fields['LinkedIn'] || '',
-        fields['Website URL'] || '', // Make sure this field name matches Airtable
+        website, // Use the website variable we extracted
         fields['Investment Focus'] || '',
         fields['Investment Stage'] || '',
         fields['Geography'] || '',
@@ -56,12 +69,21 @@ async function syncVCInvestors() {
         new Date().toISOString()
       ]);
       
-      console.log(`✅ Synced VC: ${fields['VC/Investor Name']} with website: ${fields['Website URL'] || 'NO WEBSITE'}`);
+      syncCount++;
     }
     
-    console.log('✅ VC Investors sync completed');
+    console.log(`✅ VC Investors sync completed: ${syncCount} VCs synced, ${websiteCount} with websites`);
+    
+    // Check what's actually in the database now
+    const dbVCs = await db.all(`SELECT name, website FROM vc_investors WHERE website IS NOT NULL AND website != '' LIMIT 10`);
+    console.log('=== VCs WITH WEBSITES IN DATABASE ===');
+    dbVCs.forEach(vc => {
+      console.log(`${vc.name}: ${vc.website}`);
+    });
+    
   } catch (error) {
     console.error('❌ Error syncing VC investors:', error);
+    throw error;
   }
 }
 

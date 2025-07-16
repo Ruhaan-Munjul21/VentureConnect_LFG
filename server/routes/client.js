@@ -6,6 +6,9 @@ app.get('/api/client/matches', authenticateClient, async (req, res) => {
   try {
     const clientId = req.client.id;
     
+    console.log('=== BACKEND MATCHES DEBUG ===');
+    console.log(`Fetching matches for client ${clientId}`);
+    
     // Fetch matches with proper VC data joining
     const matches = await db.all(`
       SELECT 
@@ -30,12 +33,21 @@ app.get('/api/client/matches', authenticateClient, async (req, res) => {
       ORDER BY cm.assigned_at DESC
     `, [clientId]);
 
-    console.log('=== BACKEND MATCHES DEBUG ===');
     console.log(`Found ${matches.length} matches for client ${clientId}`);
     
+    // Debug sample of raw database data
+    if (matches.length > 0) {
+      console.log('=== SAMPLE RAW MATCH DATA ===');
+      console.log(`Sample match:`, {
+        vcName: matches[0].vc_name,
+        website: matches[0].website,
+        vcId: matches[0].vc_id,
+        firm: matches[0].firm
+      });
+    }
+    
     const formattedMatches = matches.map(match => {
-      console.log(`Processing match for VC: ${match.vc_name || match.vcName}`);
-      console.log(`Website data: ${match.website || 'NULL'}`);
+      console.log(`Backend processing VC: ${match.vc_name} - Website: ${match.website || 'NULL'}`);
       
       return {
         id: match.id,
@@ -52,7 +64,7 @@ app.get('/api/client/matches', authenticateClient, async (req, res) => {
           email: match.vc_email,
           phone: match.vc_phone,
           linkedin: match.linkedin,
-          website: match.website, // This should now include the website data
+          website: match.website, // This should include the website data
           investmentFocus: match.investment_focus,
           investmentStage: match.investment_stage,
           geography: match.geography,
@@ -62,10 +74,10 @@ app.get('/api/client/matches', authenticateClient, async (req, res) => {
       };
     });
 
-    console.log('=== FORMATTED MATCHES SAMPLE ===');
+    console.log('=== BACKEND RESPONSE SAMPLE ===');
     if (formattedMatches.length > 0) {
-      console.log('Sample VC data:', {
-        name: formattedMatches[0].vcInvestor.name,
+      console.log('First formatted match:', {
+        vcName: formattedMatches[0].vcInvestor.name,
         website: formattedMatches[0].vcInvestor.website,
         firm: formattedMatches[0].vcInvestor.firm
       });

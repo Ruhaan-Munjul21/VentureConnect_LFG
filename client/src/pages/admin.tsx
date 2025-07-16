@@ -321,6 +321,53 @@ export default function AdminDashboard() {
     setExpandedCompany(expandedCompany === startupName ? null : startupName);
   };
 
+  // Add this to your admin page component
+  const [vcStatus, setVcStatus] = useState<any>(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+
+  // Function to check VC status
+  const checkVCStatus = async () => {
+    setStatusLoading(true);
+    try {
+      const response = await fetch('/api/admin/vc-status');
+      const data = await response.json();
+      if (data.success) {
+        setVcStatus(data.data);
+      } else {
+        alert('Failed to check VC status: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error checking VC status:', error);
+      alert('Error checking VC status');
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  // Function to trigger VC sync
+  const triggerVCSync = async () => {
+    setSyncLoading(true);
+    try {
+      const response = await fetch('/api/admin/sync-vcs', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('VC sync completed successfully!');
+        // Refresh status after sync
+        await checkVCStatus();
+      } else {
+        alert('VC sync failed: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error triggering VC sync:', error);
+      alert('Error triggering VC sync');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -732,6 +779,72 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* VC Database Management */}
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <h2 className="text-xl font-bold mb-4">VC Database Management</h2>
+          
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <button
+                onClick={checkVCStatus}
+                disabled={statusLoading}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                {statusLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Check VC Status
+              </button>
+              
+              <button
+                onClick={triggerVCSync}
+                disabled={syncLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm text-sm font-medium disabled:opacity-50"
+              >
+                {syncLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Sync VCs from Airtable
+              </button>
+            </div>
+
+            {vcStatus && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold mb-3">VC Database Status</h3>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white p-3 rounded">
+                    <div className="text-2xl font-bold text-blue-600">{vcStatus.totalVCs}</div>
+                    <div className="text-sm text-gray-600">Total VCs</div>
+                  </div>
+                  <div className="bg-white p-3 rounded">
+                    <div className="text-2xl font-bold text-green-600">{vcStatus.withWebsites}</div>
+                    <div className="text-sm text-gray-600">VCs with Websites</div>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <h4 className="font-medium mb-2">Problematic VCs (should have websites):</h4>
+                  <div className="space-y-1">
+                    {vcStatus.problematicVCs.map((vc: any) => (
+                      <div key={vc.name} className={`text-sm p-2 rounded ${vc.website ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {vc.name}: {vc.website ? `✅ ${vc.website}` : '❌ No website'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Sample VCs with Websites:</h4>
+                  <div className="space-y-1">
+                    {vcStatus.sampleWithWebsites.map((vc: any) => (
+                      <div key={vc.name} className="text-sm text-gray-700">
+                        {vc.name}: {vc.website}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Modal for viewing submission details */}

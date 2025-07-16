@@ -9,10 +9,18 @@ async function syncVCInvestors() {
   try {
     console.log('=== SYNCING VC INVESTORS FROM AIRTABLE ===');
     
-    // Fetch all records from Airtable
-    const records = await airtableBase('VC Database').select({
-      view: 'Grid view'
-    }).all();
+    // Fetch all records from Airtable - try both possible base names
+    let records;
+    try {
+      records = await airtableBase('VC Database').select({
+        view: 'Grid view'
+      }).all();
+    } catch (error) {
+      console.log('Failed to fetch from "VC Database", trying "VC/Investors"...');
+      records = await airtableBase('VC/Investors').select({
+        view: 'Grid view'
+      }).all();
+    }
     
     console.log(`Found ${records.length} VC records in Airtable`);
     
@@ -42,7 +50,7 @@ async function syncVCInvestors() {
         console.log(`  - Website: "${website || 'EMPTY'}"`);
       }
       
-      if (website) {
+      if (website && website.trim()) {
         websiteCount++;
       }
       
@@ -71,7 +79,7 @@ async function syncVCInvestors() {
           fields['Email'] || '',
           fields['Phone'] || '',
           fields['LinkedIn'] || '',
-          website, // This should be the website URL
+          website || null, // Ensure we store null instead of empty string
           fields['Investment Focus'] || '',
           fields['Investment Stage'] || '',
           fields['Geography'] || '',
@@ -112,6 +120,22 @@ async function syncVCInvestors() {
     withWebsites.forEach(vc => {
       console.log(`${vc.name}: ${vc.website}`);
     });
+    
+    // Force a manual sync for the problematic VCs by finding them in Airtable
+    console.log('=== MANUAL SYNC FOR PROBLEMATIC VCs ===');
+    for (const vcName of problematicVCs) {
+      const airtableRecord = records.find(r => r.fields['VC/Investor Name'] === vcName);
+      if (airtableRecord) {
+        const website = airtableRecord.fields['Website URL'];
+        console.log(`Found ${vcName} in Airtable with website: "${website}"`);
+        
+        // Force update
+        await db.run(`UPDATE vc_investors SET website = ? WHERE name = ?`, [website || null, vcName]);
+        console.log(`Force updated ${vcName} with website: "${website}"`);
+      } else {
+        console.log(`${vcName} NOT FOUND in Airtable records`);
+      }
+    }
     
   } catch (error) {
     console.error('❌ Error syncing VC investors:', error);

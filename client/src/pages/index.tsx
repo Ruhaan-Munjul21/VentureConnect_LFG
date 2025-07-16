@@ -692,239 +692,246 @@ export default function ClientDashboard() {
           </Alert>
         )}
 
-        {/* Startup Profile Information */}
-        {profile && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <img src="/images/1.png" alt="VentriLinks Logo" className="h-10 w-10 object-cover rounded-full mr-2 bg-white border border-gray-200" style={{objectPosition:'center'}} />
-                Startup Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Company Name</p>
-                  <p className="text-lg">{profile.companyName}</p>
+          {/* Startup Profile Information */}
+          {profile && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <img src="/images/1.png" alt="VentriLinks Logo" className="h-10 w-10 object-cover rounded-full mr-2 bg-white border border-gray-200" style={{objectPosition:'center'}} />
+                  Startup Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Company Name</p>
+                    <p className="text-lg">{profile.companyName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Email</p>
+                    <p className="text-lg">{profile.email}</p>
+                  </div>
+                  {profile.sector && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Sector</p>
+                      <p className="text-lg">{profile.sector}</p>
+                      </div>
+                    )}
+                  {profile.stage && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Stage</p>
+                      <p className="text-lg">{profile.stage}</p>
+                      </div>
+                    )}
+                  {profile.fundingGoal && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Funding Goal</p>
+                      <p className="text-lg">{profile.fundingGoal}</p>
+                      </div>
+                    )}
+                  {profile.description && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm font-medium text-gray-600">Description</p>
+                      <p className="text-lg">{profile.description}</p>
+                      </div>
+                    )}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Email</p>
-                  <p className="text-lg">{profile.email}</p>
-                </div>
-                {profile.sector && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Sector</p>
-                    <p className="text-lg">{profile.sector}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Dashboard State Content */}
+          {dashboardState === 'form-incomplete' && (
+            <div className="text-center py-12">
+              <div className="max-w-md mx-auto">
+                <Target className="h-16 w-16 text-blue-600 mx-auto mb-6" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Ready to Find Your Matches?
+                </h2>
+                <p className="text-gray-600 mb-8">
+                  Fill out your startup details to get matched with the right investors.
+                </p>
+                {/* Show missing core fields */}
+                {formStatus && (
+                  <div className="mb-4">
+                    <div className="font-semibold text-red-700">Missing Core Fields:</div>
+                    <ul className="text-red-600">
+                      {CORE_FIELDS.filter(f => (formStatus.missingFields || []).includes(f)).map(f => (
+                        <li key={f}>{f}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
-                {profile.stage && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Stage</p>
-                    <p className="text-lg">{profile.stage}</p>
-                  </div>
-                )}
-                {profile.fundingGoal && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Funding Goal</p>
-                    <p className="text-lg">{profile.fundingGoal}</p>
-                  </div>
-                )}
-                {profile.description && (
-                  <div className="md:col-span-2">
-                    <p className="text-sm font-medium text-gray-600">Description</p>
-                    <p className="text-lg">{profile.description}</p>
-                  </div>
-                )}
+                <Button 
+                  onClick={() => setLocation('/get-matched')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
+                >
+                  Fill Out Startup Form
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Dashboard State Content */}
-        {dashboardState === 'form-incomplete' && (
-          <div className="text-center py-12">
-            <div className="max-w-md mx-auto">
-              <Target className="h-16 w-16 text-blue-600 mx-auto mb-6" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Ready to Find Your Matches?
-              </h2>
-              <p className="text-gray-600 mb-8">
-                Fill out your startup details to get matched with the right investors.
-              </p>
-              {/* Show missing core fields */}
-              {formStatus && (
-                <div className="mb-4">
-                  <div className="font-semibold text-red-700">Missing Core Fields:</div>
-                  <ul className="text-red-600">
-                    {CORE_FIELDS.filter(f => (formStatus.missingFields || []).includes(f)).map(f => (
-                      <li key={f}>{f}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <Button 
-                onClick={() => setLocation('/get-matched')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
-              >
-                Fill Out Startup Form
-              </Button>
             </div>
-          </div>
-        )}
+          )}
 
-        {dashboardState === 'processing' && submissionTime && (
-          <CountdownTimer submissionTime={submissionTime} />
-        )}
+          {dashboardState === 'processing' && submissionTime && (
+            <CountdownTimer submissionTime={submissionTime} />
+          )}
 
-        {dashboardState === 'results-ready' && (
-          <>
-            {/* Section Title and Feedback Invitation */}
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-primary mb-4">Top Matched Investors (Up to 50)</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
-                If any matches seem off, please let us know which ones and why—your input helps us improve our matching algorithm.
-              </p>
-            </div>
+          {dashboardState === 'results-ready' && (
+            <>
+              {/* Section Title and Feedback Invitation */}
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-primary mb-4">Top Matched Investors (Up to 50)</h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
+                  If any matches seem off, please let us know which ones and why—your input helps us improve our matching algorithm.
+                </p>
+              </div>
 
-            {/* Matches Grid */}
-            <div className="matches-grid grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto p-5">
-              {matches.map((match) => {
-                return (
-                  <Card key={match.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent>
-                      <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
-                        {/* VC Name as Hyperlink to Website */}
-                        <h3 className="text-lg font-bold mb-1">
-                          {(() => {
-                            // Clean architecture: Extract VC data from pre-fetched match data
-                            const vcName = match.vcInvestor?.name || match.vcName || "Unknown VC";
-                            const vcWebsite = match.vcInvestor?.website;
-                            
-                            // Validate and format website URL
-                            const formatWebsiteUrl = (url: string | undefined): string | null => {
-                              if (!url) return null;
+              {/* Matches Grid */}
+              <div className="matches-grid grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto p-5">
+                {matches.map((match) => {
+                  return (
+                    <Card key={match.id} className="hover:shadow-lg transition-shadow">
+                      <CardContent>
+                        <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
+                          {/* VC Name as Hyperlink to Website */}
+                          <h3 className="text-lg font-bold mb-1">
+                            {(() => {
+                              // Get VC name from either vcInvestor or vcName field
+                              const vcName = match.vcInvestor?.name || match.vcName || "Unknown VC";
                               
-                              const cleanUrl = url.trim();
-                              if (!cleanUrl) return null;
+                              // Get website URL with proper validation
+                              let websiteUrl = match.vcInvestor?.website;
                               
-                              // Add protocol if missing
-                              const formattedUrl = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
-                                ? cleanUrl 
-                                : `https://${cleanUrl}`;
-                              
-                              // Validate URL format
-                              try {
-                                new URL(formattedUrl);
-                                return formattedUrl;
-                              } catch {
-                                return null;
+                              // Clean and validate website URL
+                              if (websiteUrl) {
+                                // Remove any whitespace
+                                websiteUrl = websiteUrl.trim();
+                                
+                                // Add https:// if no protocol is present
+                                if (websiteUrl && !websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+                                  websiteUrl = `https://${websiteUrl}`;
+                                }
+                                
+                                // Validate URL format
+                                try {
+                                  new URL(websiteUrl);
+                                } catch {
+                                  // Invalid URL, don't create hyperlink
+                                  websiteUrl = null;
+                                }
                               }
-                            };
-                            
-                            const validWebsiteUrl = formatWebsiteUrl(vcWebsite);
-                            
-                            // Render VC name with hyperlink if valid URL exists
-                            if (validWebsiteUrl) {
-                              return (
-                                <a 
-                                  href={validWebsiteUrl}
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold inline-flex items-center gap-1"
-                                  title={`Visit ${vcName} website`}
-                                >
-                                  {vcName}
-                                  <Globe className="h-3 w-3 opacity-70" />
-                                </a>
-                              );
-                            } else {
-                              // Fallback to plain text if no valid website
-                              return (
-                                <span className="text-gray-900 font-bold" title="No website available">
-                                  {vcName}
-                                </span>
-                              );
-                            }
-                          })()}
-                        </h3>
-                        
-                        <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
-                        
-                        <div className="match-info mb-3">
-                          <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
-                          <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
-                          <p>Geography: {match.vcInvestor?.geography || "US"}</p>
-                          
-                          {/* Enhanced website link section with domain display */}
-                          {(() => {
-                            const vcWebsite = match.vcInvestor?.website;
-                            if (!vcWebsite) return null;
-                            
-                            const cleanUrl = vcWebsite.trim();
-                            if (!cleanUrl) return null;
-                            
-                            const formattedUrl = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
-                              ? cleanUrl 
-                              : `https://${cleanUrl}`;
-                            
-                            try {
-                              const urlObj = new URL(formattedUrl);
-                              const domain = urlObj.hostname.replace('www.', '');
                               
-                              return (
-                                <p className="text-sm text-blue-600 mt-2">
-                                  🌐{" "}
+                              // Render hyperlink if valid URL exists, otherwise plain text
+                              if (websiteUrl) {
+                                return (
                                   <a 
-                                    href={formattedUrl}
+                                    href={websiteUrl}
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="hover:underline font-medium"
-                                    title={`Visit ${domain}`}
+                                    className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold inline-flex items-center gap-1"
+                                    title={`Visit ${vcName} website`}
+                                    onClick={(e) => {
+                                      // Additional safety check before navigation
+                                      if (!websiteUrl) {
+                                        e.preventDefault();
+                                        console.warn('Invalid website URL for VC:', vcName);
+                                      }
+                                    }}
                                   >
-                                    {domain}
+                                    {vcName}
+                                    <Globe className="h-3 w-3 opacity-70" />
                                   </a>
-                                </p>
-                              );
-                            } catch {
+                                );
+                              } else {
+                                return (
+                                  <span className="text-gray-900 font-bold" title="No website available">
+                                    {vcName}
+                                  </span>
+                                );
+                              }
+                            })()}
+                          </h3>
+                          
+                          <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
+                          
+                          <div className="match-info mb-3">
+                            <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
+                            <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
+                            <p>Geography: {match.vcInvestor?.geography || "US"}</p>
+                            
+                            {/* Enhanced website link section */}
+                            {(() => {
+                              let websiteUrl = match.vcInvestor?.website;
+                              
+                              if (websiteUrl) {
+                                websiteUrl = websiteUrl.trim();
+                                
+                                if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+                                  websiteUrl = `https://${websiteUrl}`;
+                                }
+                                
+                                try {
+                                  new URL(websiteUrl);
+                                  
+                                  // Extract domain for display
+                                  const domain = new URL(websiteUrl).hostname.replace('www.', '');
+                                  
+                                  return (
+                                    <p className="text-sm text-blue-600 mt-2">
+                                      🌐{" "}
+                                      <a 
+                                        href={websiteUrl}
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="hover:underline font-medium"
+                                        title={`Visit ${domain}`}
+                                      >
+                                        {domain}
+                                      </a>
+                                    </p>
+                                  );
+                                } catch {
+                                  // Invalid URL, don't show link
+                                  return null;
+                                }
+                              }
                               return null;
-                            }
-                          })()}
-                        </div>
-                        
-                        <div className="match-actions flex flex-col gap-3 items-start">
-                          {(match.matchReasoning || match.portfolioReasoning) && (
-                            <a
-                              href="#"
-                              onClick={e => { 
-                                e.preventDefault(); 
-                                const combinedReasoning = [
-                                  match.matchReasoning && `Match Analysis:\n${match.matchReasoning}`,
-                                  match.portfolioReasoning && `\nPortfolio Analysis:\n${match.portfolioReasoning}`
-                                ].filter(Boolean).join('\n');
-                                openMatchReasoning(combinedReasoning);
-                              }}
-                              className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
+                            })()}
+                          </div>
+                          <div className="match-actions flex flex-col gap-3 items-start">
+                            {(match.matchReasoning || match.portfolioReasoning) && (
+                              <a
+                                href="#"
+                                onClick={e => { 
+                                  e.preventDefault(); 
+                                  const combinedReasoning = [
+                                    match.matchReasoning && `Match Analysis:\n${match.matchReasoning}`,
+                                    match.portfolioReasoning && `\nPortfolio Analysis:\n${match.portfolioReasoning}`
+                                  ].filter(Boolean).join('\n');
+                                  openMatchReasoning(combinedReasoning);
+                                }}
+                                className="text-blue-600 hover:underline text-sm font-medium flex items-center gap-1"
+                              >
+                                <span>🧬</span> Why this match?
+                              </a>
+                            )}
+                            {/* Leave Feedback Button */}
+                            <Button
+                              onClick={() => openFeedbackDialog(match)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
+                              size="sm"
                             >
-                              <span>🧬</span> Why this match?
-                            </a>
-                          )}
-                          {/* Leave Feedback Button */}
-                          <Button
-                            onClick={() => openFeedbackDialog(match)}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
-                            size="sm"
-                          >
-                            <span>💬</span> Leave Feedback
-                          </Button>
+                              <span>💬</span> Leave Feedback
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </>
-        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          )}
       </div>
 
       {/* Feedback Dialog */}

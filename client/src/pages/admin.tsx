@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Loader2, RefreshCw, Eye, Send, Check, X, Download, Users, Target, TrendingUp, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const AIRTABLE_API_KEY = 'patPnlxR05peVEnUc.e5a8cfe5a3f88676da4b3c124c99ed46026b4f869bb5b6a3f54cd45db17fd58f';
 const BASE_ID = 'app768aQ07mCJoyu8';
@@ -786,23 +787,23 @@ export default function AdminDashboard() {
           
           <div className="space-y-4">
             <div className="flex gap-4">
-              <button
+              <Button 
                 onClick={checkVCStatus}
                 disabled={statusLoading}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="flex items-center gap-2"
               >
                 {statusLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Check VC Status
-              </button>
+              </Button>
               
-              <button
+              <Button 
                 onClick={triggerVCSync}
                 disabled={syncLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm text-sm font-medium disabled:opacity-50"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
               >
                 {syncLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Sync VCs from Airtable
-              </button>
+              </Button>
             </div>
 
             {vcStatus && (

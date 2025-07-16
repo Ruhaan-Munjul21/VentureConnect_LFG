@@ -635,7 +635,7 @@ export default function ClientDashboard() {
           <div className="flex justify-between items-center h-16">
             {/* VentriLinks Logo and Name - Clickable Home Link */}
             <div 
-              className="flex items-center cursor-pointer" 
+              className="flex items-center cursor-pointer hover:opacity-80 transition-opacity" 
               onClick={() => {
                 setLocation('/');
                 setTimeout(() => {
@@ -654,18 +654,30 @@ export default function ClientDashboard() {
               </h1>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={() => {
-                setLocation('/');
-                setTimeout(() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }, 100);
-              }}>
+            {/* Header Navigation Buttons */}
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setLocation('/');
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 100);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                <Globe className="h-4 w-4" />
                 Back to Home
               </Button>
-              {/* Other header buttons */}
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
                 Sign Out
               </Button>
             </div>
@@ -783,37 +795,108 @@ export default function ClientDashboard() {
                         <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
                           {/* VC Name as Hyperlink to Website */}
                           <h3 className="text-lg font-bold mb-1">
-                            {match.vcInvestor?.website ? (
-                              <a 
-                                href={match.vcInvestor.website.startsWith('http') ? match.vcInvestor.website : `https://${match.vcInvestor.website}`}
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold"
-                                title={`Visit ${match.vcInvestor?.name || match.vcName} website`}
-                              >
-                                {match.vcInvestor?.name || match.vcName || "Unknown VC"}
-                              </a>
-                            ) : (
-                              <span className="text-gray-900">{match.vcInvestor?.name || match.vcName || "Unknown VC"}</span>
-                            )}
+                            {(() => {
+                              // Get VC name from either vcInvestor or vcName field
+                              const vcName = match.vcInvestor?.name || match.vcName || "Unknown VC";
+                              
+                              // Get website URL with proper validation
+                              let websiteUrl = match.vcInvestor?.website;
+                              
+                              // Clean and validate website URL
+                              if (websiteUrl) {
+                                // Remove any whitespace
+                                websiteUrl = websiteUrl.trim();
+                                
+                                // Add https:// if no protocol is present
+                                if (websiteUrl && !websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+                                  websiteUrl = `https://${websiteUrl}`;
+                                }
+                                
+                                // Validate URL format
+                                try {
+                                  new URL(websiteUrl);
+                                } catch {
+                                  // Invalid URL, don't create hyperlink
+                                  websiteUrl = null;
+                                }
+                              }
+                              
+                              // Render hyperlink if valid URL exists, otherwise plain text
+                              if (websiteUrl) {
+                                return (
+                                  <a 
+                                    href={websiteUrl}
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold inline-flex items-center gap-1"
+                                    title={`Visit ${vcName} website`}
+                                    onClick={(e) => {
+                                      // Additional safety check before navigation
+                                      if (!websiteUrl) {
+                                        e.preventDefault();
+                                        console.warn('Invalid website URL for VC:', vcName);
+                                      }
+                                    }}
+                                  >
+                                    {vcName}
+                                    <Globe className="h-3 w-3 opacity-70" />
+                                  </a>
+                                );
+                              } else {
+                                return (
+                                  <span className="text-gray-900 font-bold" title="No website available">
+                                    {vcName}
+                                  </span>
+                                );
+                              }
+                            })()}
                           </h3>
+                          
                           <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
+                          
                           <div className="match-info mb-3">
                             <p>Investment Focus: {match.vcInvestor?.investmentFocus || "Biotech"}</p>
                             <p>Stage: {match.vcInvestor?.investmentStage || "Early to Growth"}</p>
                             <p>Geography: {match.vcInvestor?.geography || "US"}</p>
-                            {match.vcInvestor?.website && (
-                              <p className="text-sm text-blue-600 mt-2">
-                                🌐 <a 
-                                  href={match.vcInvestor.website.startsWith('http') ? match.vcInvestor.website : `https://${match.vcInvestor.website}`}
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="hover:underline"
-                                >
-                                  Visit Website
-                                </a>
-                              </p>
-                            )}
+                            
+                            {/* Enhanced website link section */}
+                            {(() => {
+                              let websiteUrl = match.vcInvestor?.website;
+                              
+                              if (websiteUrl) {
+                                websiteUrl = websiteUrl.trim();
+                                
+                                if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+                                  websiteUrl = `https://${websiteUrl}`;
+                                }
+                                
+                                try {
+                                  new URL(websiteUrl);
+                                  
+                                  // Extract domain for display
+                                  const domain = new URL(websiteUrl).hostname.replace('www.', '');
+                                  
+                                  return (
+                                    <p className="text-sm text-blue-600 mt-2">
+                                      🌐{" "}
+                                      <a 
+                                        href={websiteUrl}
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="hover:underline font-medium"
+                                        title={`Visit ${domain}`}
+                                      >
+                                        {domain}
+                                      </a>
+                                    </p>
+                                  );
+                                } catch {
+                                  // Invalid URL, don't show link
+                                  return null;
+                                }
+                              }
+                              return null;
+                            })()}
                           </div>
                           <div className="match-actions flex flex-col gap-3 items-start">
                             {(match.matchReasoning || match.portfolioReasoning) && (

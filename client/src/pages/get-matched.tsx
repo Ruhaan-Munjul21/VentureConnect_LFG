@@ -1,293 +1,85 @@
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { Button } from '../components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Globe, ArrowLeft, Building2, Loader2 } from 'lucide-react';
 
 export default function GetMatched() {
-  const [user, setUser] = useState<any>(null);
-  const [formStatus, setFormStatus] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const formRef = useRef<HTMLDivElement>(null);
+  const [, setLocation] = useLocation();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
-  // Check authentication status on component mount
-  useEffect(() => {
-    checkAuthentication();
-  }, []);
+  // Form state
+  const [formData, setFormData] = useState({
+    companyName: '',
+    email: '',
+    contactName: '',
+    phone: '',
+    sector: '',
+    stage: '',
+    fundingGoal: '',
+    description: '',
+    drugModality: '',
+    diseaseFocus: '',
+    investmentStage: '',
+    geography: '',
+    investmentAmount: ''
+  });
 
-  // Check form completion status when user is logged in
-  useEffect(() => {
-    if (user) {
-      checkFormStatus();
-    }
-  }, [user]);
-
-  // Listen for Airtable form submissions
-  useEffect(() => {
-    const handleAirtableMessage = async (event: MessageEvent) => {
-      // Check if this is an Airtable form submission message
-      if (event.data && event.data.type === 'airtable-form-submission') {
-        console.log('Airtable form submission received:', event.data);
-        
-        try {
-          // Determine the email to use for the submission
-          let submissionEmail = user?.email;
-          
-          // If user is not authenticated, check if form data contains email
-          if (!submissionEmail && event.data.formData && event.data.formData.email) {
-            submissionEmail = event.data.formData.email;
-          }
-          
-          // If still no email, show error
-          if (!submissionEmail) {
-            console.error('No email available for form submission');
-            alert('Please sign in with Google before submitting the form, or include your email in the form.');
-            return;
-          }
-          
-          // Call our backend endpoint to handle the submission
-          const response = await fetch('/api/client/form-submission', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: submissionEmail,
-              ...event.data.formData
-            })
-          });
-
-          if (response.ok) {
-            console.log('Form submission processed successfully');
-            const responseData = await response.json();
-            
-            // If user was not authenticated but form was submitted successfully,
-            // create a session and redirect to dashboard
-            if (!user) {
-              console.log('Manual form submission - creating session and redirecting to dashboard');
-              
-              // Use the new manual form submission endpoint that creates a session
-              try {
-                const manualResponse = await fetch('/api/client/manual-form-submission', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    email: submissionEmail,
-                    ...event.data.formData
-                  })
-                });
-                
-                if (manualResponse.ok) {
-                  const manualData = await manualResponse.json();
-                  if (manualData.token) {
-                    localStorage.setItem('clientToken', manualData.token);
-                    localStorage.setItem('clientUser', JSON.stringify({ 
-                      email: submissionEmail,
-                      id: manualData.data.numericId 
-                    }));
-                    console.log('Manual form submission successful, redirecting to dashboard');
-                    window.location.href = '/client/dashboard';
-                    return;
-                  }
-                }
-              } catch (manualError) {
-                console.log('Manual form submission failed:', manualError);
-              }
-              
-              // If manual submission fails, redirect to login page with instructions
-              alert('Form submitted successfully! You can now sign in with your email to access your dashboard.');
-              window.location.href = '/client/login';
-            } else {
-              // User was authenticated - redirect to dashboard to see updated state
-                console.log('Form updated successfully, redirecting to dashboard');
-                window.location.href = '/client/dashboard';
-            }
-          } else {
-            console.error('Failed to process form submission');
-            const errorData = await response.json();
-            alert(`Form submission failed: ${errorData.message}`);
-          }
-        } catch (error) {
-          console.error('Error processing form submission:', error);
-          alert('Error submitting form. Please try again.');
-        }
-      }
-    };
-
-    // Add event listener for Airtable messages
-    window.addEventListener('message', handleAirtableMessage);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('message', handleAirtableMessage);
-    };
-  }, [user]);
-
-  const checkAuthentication = async () => {
-    try {
-      const token = localStorage.getItem('clientToken');
-      const storedUser = localStorage.getItem('clientUser');
-      
-      if (token) {
-        // Verify token is valid by calling profile API
-        const response = await fetch('/api/client/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.data);
-          // Check form status for authenticated users
-          checkFormStatus();
-        } else {
-          // Token is invalid, clear storage
-          localStorage.removeItem('clientToken');
-          localStorage.removeItem('clientUser');
-          setUser(null);
-        }
-      } else if (storedUser) {
-        // Fallback to stored user if no token
-        setUser(JSON.parse(storedUser));
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Error checking authentication:', error);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
+  // Function to handle navigation back to home
+  const handleBackToHome = () => {
+    setLocation('/');
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
-  const checkFormStatus = async () => {
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      const token = localStorage.getItem('clientToken');
-      if (!token) return;
-
-      const response = await fetch('/api/client/form-status', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setFormStatus(data.data);
-        
-        // In the simplified flow, we don't redirect based on form completion
-        // Users can always access the dashboard and see the appropriate state
-      }
-    } catch (error) {
-      console.error('Error checking form status:', error);
-    }
-  };
-
-
-
-  function handleLogout() {
-    setUser(null);
-    setFormStatus(null);
-    localStorage.removeItem('clientUser');
-    localStorage.removeItem('clientToken');
-  }
-
-  // Handle form submission detection
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Listen for Airtable form submission messages
-      if (event.data && event.data.type === 'airtable-form-submitted') {
-        // Mark form as complete and redirect
-        markFormComplete();
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
-  const markFormComplete = async () => {
-    try {
-      const token = localStorage.getItem('clientToken');
-      if (!token) return;
-
-      const response = await fetch('/api/client/mark-form-complete', {
+      const response = await fetch('/api/client/profile', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        // Redirect to client portal
-        window.location.href = '/client/dashboard';
+        setSuccess(true);
+        setTimeout(() => {
+          setLocation('/client/dashboard');
+        }, 2000);
       } else {
-        const data = await response.json();
-        if (data.data && data.data.missingFields) {
-          console.error(`Form incomplete. Please fill out: ${data.data.missingFields.join(', ')}`);
-        }
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to submit form');
       }
-    } catch (error) {
-      console.error('Error marking form complete:', error);
+    } catch (err) {
+      setError('An error occurred while submitting the form');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-        <button className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => window.location.href = '/'}>
-          Back to Home
-        </button>
-        
-        <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
-          <h2 className="text-2xl font-bold mb-6 text-center">Sign in to Access Beta</h2>
-          
-          {/* Email Login */}
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">
-              Sign in with your email and password to access the form
-            </p>
-            <button 
-              onClick={() => window.location.href = '/client/login'}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Sign In with Email
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Always render the form, but show warning if incomplete
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header with VentriLinks logo and navigation */}
+      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* VentriLinks Logo and Name - Clickable Home Link */}
             <div 
-              className="flex items-center cursor-pointer" 
-              onClick={() => {
-                setLocation('/');
-                setTimeout(() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }, 100);
-              }}
+              className="flex items-center cursor-pointer hover:opacity-80 transition-opacity" 
+              onClick={handleBackToHome}
             >
               <img 
                 src="/images/1.png" 
@@ -300,128 +92,238 @@ export default function GetMatched() {
               </h1>
             </div>
             
-            <Button variant="outline" onClick={() => {
-                setLocation('/');
-                setTimeout(() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }, 100);
-              }}>
-              Back to Home
-            </Button>
+            {/* Header Navigation Buttons */}
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleBackToHome}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                <Globe className="h-4 w-4" />
+                Back to Home
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Warning if form incomplete */}
-      {formStatus && !formStatus.isComplete && (
-        <div className="min-h-[200px] bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-2xl mb-8">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Complete Your Profile</h2>
-              <p className="text-gray-600">
-                Please complete your startup profile to access the client portal
-              </p>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold text-yellow-900 mb-3">Missing Information</h3>
-              <p className="text-yellow-800 mb-4">
-                The following fields need to be completed in your startup profile:
-              </p>
-              <ul className="list-disc list-inside text-yellow-800 space-y-1">
-                {formStatus.missingFields.map((field: string) => (
-                  <li key={field} className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={() => {
-                  if (formRef.current) {
-                    formRef.current.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Complete Form
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Form Content */}
-      <div className="max-w-4xl mx-auto px-6 py-12" ref={formRef}>
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Get Matched with VCs That Want to Fund You
-          </h1>
-          <p className="text-xl text-gray-600 mb-6">
-            Our AI analyzes 2,000+ investor profiles to find VCs actively seeking startups like yours
-          </p>
-          <div className="flex justify-center space-x-8 text-sm text-gray-600 mb-8">
-            <span className="text-green-600">✓ Results in 24-48 hours</span>
-            <span className="text-green-600">✓ Free sample matches</span>
-            <span className="text-green-600">✓ No spam guarantee</span>
-          </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back navigation button within form */}
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={handleBackToHome}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Button>
         </div>
-                
-        {/* Better styled form container */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-8 border-b border-gray-100">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Tell us about your startup
-            </h3>
-            <p className="text-gray-600">
-              This information helps us find VCs that are actively looking for companies like yours
-            </p>
-          </div>
-                    
-          <div className="p-0 relative">
-            {/* Overlay to hide Airtable branding */}
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-white z-10 pointer-events-none"></div>
-                        
-            <iframe
-              src="https://airtable.com/embed/app768aQ07mCJoyu8/shrlLG8nRtAkRbXVn?backgroundColor=transparent"
-              width="100%"
-              height="800"
-              frameBorder="0"
-              style={{
-                background: 'transparent',
-                border: 'none'
-              }}
-            />
-          </div>
-        </div>
-                
-        {/* Next steps info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
-          <h4 className="text-lg font-semibold text-blue-900 mb-2">What happens next?</h4>
-          <p className="text-blue-800 mb-4">
-            After you submit this form, our team will review your information and create VC matches for your company. 
-            You'll be automatically redirected to the client portal to view your matches.
-          </p>
-          <div className="flex items-center text-sm text-blue-700">
-            <span className="mr-2">🔗</span>
-            <span>You'll be redirected to the <a href="/client/dashboard" className="underline font-medium">Client Portal</a> after form submission</span>
-          </div>
-        </div>
-                
-        {/* Trust indicators below */}
-        <div className="text-center mt-8">
-          <div className="flex justify-center space-x-8 text-sm text-gray-500">
-            <span>🔒 Confidential & Secure</span>
-            <span>🚀 Used by 500+ biotech founders</span>
-            <span>⚡ AI-powered matching</span>
-          </div>
-        </div>
+
+        {/* Form Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-6 w-6" />
+              Get Matched with VCs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="mb-6 border-green-200 bg-green-50">
+                <AlertDescription className="text-green-800">
+                  Form submitted successfully! Redirecting to your dashboard...
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Company Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="companyName" className="block text-sm font-medium mb-2">
+                    Company Name *
+                  </label>
+                  <Input
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium mb-2">
+                    Email *
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="contactName" className="block text-sm font-medium mb-2">
+                    Contact Name
+                  </label>
+                  <Input
+                    id="contactName"
+                    value={formData.contactName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                    Phone
+                  </label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Company Description */}
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium mb-2">
+                  Company Description
+                </label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                  placeholder="Tell us about your company..."
+                />
+              </div>
+
+              {/* Core Matching Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="drugModality" className="block text-sm font-medium mb-2">
+                    Drug Modality *
+                  </label>
+                  <Select value={formData.drugModality} onValueChange={(value) => setFormData(prev => ({ ...prev, drugModality: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select drug modality..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small-molecule">Small Molecule</SelectItem>
+                      <SelectItem value="biologics">Biologics</SelectItem>
+                      <SelectItem value="gene-therapy">Gene Therapy</SelectItem>
+                      <SelectItem value="cell-therapy">Cell Therapy</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label htmlFor="diseaseFocus" className="block text-sm font-medium mb-2">
+                    Disease Focus *
+                  </label>
+                  <Input
+                    id="diseaseFocus"
+                    value={formData.diseaseFocus}
+                    onChange={(e) => setFormData(prev => ({ ...prev, diseaseFocus: e.target.value }))}
+                    placeholder="e.g., Oncology, Neurology..."
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="investmentStage" className="block text-sm font-medium mb-2">
+                    Investment Stage *
+                  </label>
+                  <Select value={formData.investmentStage} onValueChange={(value) => setFormData(prev => ({ ...prev, investmentStage: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select stage..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pre-seed">Pre-Seed</SelectItem>
+                      <SelectItem value="seed">Seed</SelectItem>
+                      <SelectItem value="series-a">Series A</SelectItem>
+                      <SelectItem value="series-b">Series B</SelectItem>
+                      <SelectItem value="series-c">Series C+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label htmlFor="geography" className="block text-sm font-medium mb-2">
+                    Geography *
+                  </label>
+                  <Select value={formData.geography} onValueChange={(value) => setFormData(prev => ({ ...prev, geography: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select geography..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="north-america">North America</SelectItem>
+                      <SelectItem value="europe">Europe</SelectItem>
+                      <SelectItem value="asia">Asia</SelectItem>
+                      <SelectItem value="global">Global</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="investmentAmount" className="block text-sm font-medium mb-2">
+                  Investment Amount *
+                </label>
+                <Select value={formData.investmentAmount} onValueChange={(value) => setFormData(prev => ({ ...prev, investmentAmount: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select investment amount..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="under-1m">Under $1M</SelectItem>
+                    <SelectItem value="1m-5m">$1M - $5M</SelectItem>
+                    <SelectItem value="5m-25m">$5M - $25M</SelectItem>
+                    <SelectItem value="25m-100m">$25M - $100M</SelectItem>
+                    <SelectItem value="over-100m">Over $100M</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Footer with navigation and submission */}
+              <div className="pt-6 border-t border-gray-200">
+                <div className="flex justify-between items-center">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={handleBackToHome}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Home
+                  </Button>
+                  
+                  <Button 
+                    type="submit" 
+                    disabled={loading}
+                    className="flex items-center gap-2"
+                  >
+                    {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {loading ? 'Submitting...' : 'Get Matched'}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

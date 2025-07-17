@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Save feedback to Airtable using your existing field structure
     const airtableApiKey = process.env.AIRTABLE_API_KEY;
-    const airtableBaseId = process.env.AIRTABLE_BASE_ID;
+    const airtableBaseId = process.env.BASE_ID || process.env.AIRTABLE_BASE_ID; // Support both variable names
 
     if (airtableApiKey && airtableBaseId) {
       try {

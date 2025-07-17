@@ -782,21 +782,20 @@ export default function ClientDashboard() {
               {matches.map((match, index) => {
                 // Create VC link using utility function
                 const vcName = match.vcInvestor?.name || match.vcName || "Unknown VC";
+                const vcWebsite = match.vcInvestor?.website;
                 
-                // Debug specific problematic VCs
-                if (index === 0) {
-                  console.log('🧪 Testing VC lookup for first few matches...');
-                  testVcLookup('ATEM Capital');
-                  testVcLookup('Brainchild Holdings');
-                  testVcLookup(vcName);
+                // Debug the first few matches extensively
+                if (index < 6) {
+                  console.log(`=== MATCH ${index + 1} DEBUG ===`);
+                  console.log('Full match object:', match);
+                  console.log('VC Name from match:', vcName);
+                  console.log('VC Website from match:', vcWebsite);
+                  console.log('vcInvestor object:', match.vcInvestor);
+                  console.log('vcInvestor.name:', match.vcInvestor?.name);
+                  console.log('vcName field:', match.vcName);
                 }
                 
-                const vcLink = createVcLinkFast(
-                  vcName,
-                  match.vcInvestor?.website
-                );
-
-                console.log(`🔗 VC Link Result for "${vcName}":`, vcLink);
+                const vcLink = createVcLinkFast(vcName, vcWebsite);
 
                 return (
                   <Card key={match.id} className="hover:shadow-lg transition-shadow">

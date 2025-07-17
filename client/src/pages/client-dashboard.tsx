@@ -910,9 +910,9 @@ export default function ClientDashboard() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Good Match">Good Match</SelectItem>
-                    <SelectItem value="Poor Match">Poor Match</SelectItem>
                     <SelectItem value="Maybe">Maybe</SelectItem>
                     <SelectItem value="Not Sure">Not Sure</SelectItem>
+                    <SelectItem value="Poor Match">Poor Match</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

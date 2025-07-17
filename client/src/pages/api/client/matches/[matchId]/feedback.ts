@@ -38,8 +38,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Match quality is required' });
     }
 
-    // For now, we'll log the feedback and return success
-    // In a real implementation, you'd save this to your database
+    // Validate that matchQuality is one of the allowed options
+    const allowedOptions = ['Good Match', 'Maybe', 'Not Sure', 'Poor Match'];
+    if (!allowedOptions.includes(matchQuality)) {
+      return res.status(400).json({ error: 'Invalid match quality option' });
+    }
+
+    // Log the feedback for debugging
     const feedbackData = {
       matchId,
       clientEmail,
@@ -50,34 +55,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('💬 FEEDBACK SUBMITTED:', feedbackData);
 
-    // You can add Airtable integration here to save feedback
+    // Save feedback to Airtable using your existing field structure
     const airtableApiKey = process.env.AIRTABLE_API_KEY;
     const airtableBaseId = process.env.AIRTABLE_BASE_ID;
 
     if (airtableApiKey && airtableBaseId) {
       try {
-        // Save feedback to Airtable
-        const airtableResponse = await fetch(`https://api.airtable.com/v0/${airtableBaseId}/Match%20Feedback`, {
-          method: 'POST',
+        // First, try to find the existing match record to update it
+        const searchResponse = await fetch(`https://api.airtable.com/v0/${airtableBaseId}/Client%20Matches?filterByFormula=AND({Match ID}='${matchId}',{Client Email}='${clientEmail}')`, {
           headers: {
             'Authorization': `Bearer ${airtableApiKey}`,
             'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            fields: {
-              'Match ID': matchId,
-              'Client Email': clientEmail,
-              'Match Quality': matchQuality,
-              'Feedback Text': feedbackText || '',
-              'Submitted At': new Date().toISOString()
-            }
-          })
+          }
         });
 
-        if (airtableResponse.ok) {
-          console.log('✅ Feedback saved to Airtable');
-        } else {
-          console.log('⚠️ Failed to save feedback to Airtable:', airtableResponse.status);
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          
+          if (searchData.records && searchData.records.length > 0) {
+            // Update existing record
+            const recordId = searchData.records[0].id;
+            const updateResponse = await fetch(`https://api.airtable.com/v0/${airtableBaseId}/Client%20Matches/${recordId}`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${airtableApiKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                fields: {
+                  'Startup Says Good': matchQuality,
+                  'Startup Feedback': feedbackText || ''
+                }
+              })
+            });
+
+            if (updateResponse.ok) {
+              console.log('✅ Feedback updated in existing Airtable record');
+            } else {
+              console.log('⚠️ Failed to update feedback in Airtable:', updateResponse.status);
+            }
+          } else {
+            console.log('⚠️ No matching record found in Airtable for this match');
+          }
         }
       } catch (error) {
         console.log('⚠️ Error saving feedback to Airtable:', error);

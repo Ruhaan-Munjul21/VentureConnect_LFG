@@ -27,6 +27,7 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
+import { createVcLinkFast } from '../utils/vc-utils';
 
 
 interface VCInvestor {
@@ -779,73 +780,34 @@ export default function ClientDashboard() {
             {/* Matches Grid */}
             <div className="matches-grid grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto p-5">
               {matches.map((match) => {
+                // Create VC link using utility function
+                const vcLink = createVcLinkFast(
+                  match.vcInvestor?.name || match.vcName || "Unknown VC",
+                  match.vcInvestor?.website
+                );
+
                 return (
                   <Card key={match.id} className="hover:shadow-lg transition-shadow">
                     <CardContent>
                       <div className="match-card flex flex-col p-5 border border-gray-200 rounded-lg bg-white shadow-sm mb-4 gap-3 w-full max-w-md mx-auto">
                         {/* VC Name as Hyperlink to Website */}
                         <h3 className="text-lg font-bold mb-1">
-                          {(() => {
-                            // Extract VC data from match
-                            const vcName = match.vcInvestor?.name || match.vcName || "Unknown VC";
-                            const vcWebsite = match.vcInvestor?.website;
-                            
-                            // Force console output for debugging
-                            console.log(`🔍 DEBUGGING VC: ${vcName}`);
-                            console.log(`📧 Full match object:`, match);
-                            console.log(`🏢 vcInvestor:`, match.vcInvestor);
-                            console.log(`🌐 Website:`, vcWebsite);
-                            
-                            // Check if website exists and is valid
-                            if (!vcWebsite) {
-                              console.log(`❌ ${vcName}: NO WEBSITE DATA`);
-                              return (
-                                <span className="text-gray-900 font-bold" title="No website available">
-                                  {vcName}
-                                </span>
-                              );
-                            }
-                            
-                            const cleanUrl = vcWebsite.trim();
-                            if (!cleanUrl) {
-                              console.log(`❌ ${vcName}: EMPTY WEBSITE`);
-                              return (
-                                <span className="text-gray-900 font-bold" title="No website available">
-                                  {vcName}
-                                </span>
-                              );
-                            }
-                            
-                            // Format URL
-                            const formattedUrl = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
-                              ? cleanUrl 
-                              : `https://${cleanUrl}`;
-                            
-                            // Validate URL
-                            try {
-                              new URL(formattedUrl);
-                              console.log(`✅ ${vcName}: VALID URL - ${formattedUrl}`);
-                              return (
-                                <a 
-                                  href={formattedUrl}
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold inline-flex items-center gap-1"
-                                  title={`Visit ${vcName} website`}
-                                >
-                                  {vcName}
-                                  <Globe className="h-3 w-3 opacity-70" />
-                                </a>
-                              );
-                            } catch (error) {
-                              console.log(`❌ ${vcName}: INVALID URL - ${formattedUrl}`, error);
-                              return (
-                                <span className="text-gray-900 font-bold" title="Invalid website URL">
-                                  {vcName}
-                                </span>
-                              );
-                            }
-                          })()}
+                          {vcLink.hasLink ? (
+                            <a 
+                              href={vcLink.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-blue-600 hover:text-blue-800 hover:underline transition-colors font-bold inline-flex items-center gap-1"
+                              title={`Visit ${vcLink.name} website`}
+                            >
+                              {vcLink.name}
+                              <Globe className="h-3 w-3 opacity-70" />
+                            </a>
+                          ) : (
+                            <span className="text-gray-900 font-bold" title="No website available">
+                              {vcLink.name}
+                            </span>
+                          )}
                         </h3>
                         
                         <p className="text-gray-700 mb-2">{match.vcInvestor?.firm || ""}</p>
@@ -856,39 +818,27 @@ export default function ClientDashboard() {
                           <p>Geography: {match.vcInvestor?.geography || "US"}</p>
                           
                           {/* Enhanced website link section with domain display */}
-                          {(() => {
-                            const vcWebsite = match.vcInvestor?.website;
-                            if (!vcWebsite) return null;
-                            
-                            const cleanUrl = vcWebsite.trim();
-                            if (!cleanUrl) return null;
-                            
-                            const formattedUrl = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
-                              ? cleanUrl 
-                              : `https://${cleanUrl}`;
-                            
-                            try {
-                              const urlObj = new URL(formattedUrl);
-                              const domain = urlObj.hostname.replace('www.', '');
-                              
-                              return (
-                                <p className="text-sm text-blue-600 mt-2">
-                                  🌐{" "}
-                                  <a 
-                                    href={formattedUrl}
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="hover:underline font-medium"
-                                    title={`Visit ${domain}`}
-                                  >
-                                    {domain}
-                                  </a>
-                                </p>
-                              );
-                            } catch {
-                              return null;
-                            }
-                          })()}
+                          {vcLink.hasLink && (
+                            <p className="text-sm text-blue-600 mt-2">
+                              🌐{" "}
+                              <a 
+                                href={vcLink.url}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="hover:underline font-medium"
+                                title={`Visit ${vcLink.name} website`}
+                              >
+                                {(() => {
+                                  try {
+                                    const urlObj = new URL(vcLink.url!);
+                                    return urlObj.hostname.replace('www.', '');
+                                  } catch {
+                                    return vcLink.url;
+                                  }
+                                })()}
+                              </a>
+                            </p>
+                          )}
                         </div>
                         
                         <div className="match-actions flex flex-col gap-3 items-start">

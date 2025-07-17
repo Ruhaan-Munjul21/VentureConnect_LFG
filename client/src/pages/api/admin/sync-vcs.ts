@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import vcUrlsArray from '../../data/vc-urls.json';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -27,9 +28,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const data = await response.json();
     
+    // Create lookup map for performance
+    const vcUrlMap: Record<string, string> = {};
+    vcUrlsArray.forEach(vc => {
+      vcUrlMap[vc['VC/Investor Name']] = vc['Website URL'];
+    });
+    
     // Process the sync results
     const validVCs = data.records.filter((record: any) => 
-      record.fields['VC/Investor Name'] && record.fields['Website URL']
+      record.fields['VC/Investor Name'] && (record.fields['Website URL'] || vcUrlMap[record.fields['VC/Investor Name']])
     );
 
     const syncResult = {
@@ -38,7 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       errors: data.records.length - validVCs.length,
       timestamp: new Date().toISOString(),
       totalRecords: data.records.length,
-      validVCs: validVCs.length
+      validVCs: validVCs.length,
+      fallbackUrlsAvailable: vcUrlsArray.length
     };
 
     console.log('VC sync completed:', syncResult);
@@ -46,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).json({
       success: true,
       data: syncResult,
-      message: `VC sync from Airtable completed successfully. Synced ${validVCs.length} valid VCs out of ${data.records.length} total records.`
+      message: `VC sync from Airtable completed successfully. Synced ${validVCs.length} valid VCs out of ${data.records.length} total records. ${vcUrlsArray.length} fallback URLs available.`
     });
   } catch (error) {
     console.error('Error syncing VCs from Airtable:', error);

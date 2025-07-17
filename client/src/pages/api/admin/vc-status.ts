@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import vcUrlsArray from '../../data/vc-urls.json';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -27,9 +28,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const data = await response.json();
     
+    // Create lookup map for performance
+    const vcUrlMap: Record<string, string> = {};
+    vcUrlsArray.forEach(vc => {
+      vcUrlMap[vc['VC/Investor Name']] = vc['Website URL'];
+    });
+    
+    // Check which VCs have websites in Airtable vs our fallback JSON
+    const vcsWithAirtableWebsites = data.records.filter((record: any) => 
+      record.fields['VC/Investor Name'] && record.fields['Website URL']
+    );
+    
+    const vcsWithoutAirtableWebsites = data.records.filter((record: any) => 
+      record.fields['VC/Investor Name'] && !record.fields['Website URL']
+    );
+    
+    // Check how many of the missing ones we can resolve with our JSON fallback
+    const vcsWithFallbackUrls = vcsWithoutAirtableWebsites.filter((record: any) => {
+      const vcName = record.fields['VC/Investor Name'];
+      return vcUrlMap[vcName];
+    });
+    
+    const totalResolvableUrls = vcsWithAirtableWebsites.length + vcsWithFallbackUrls.length;
+    
     const vcStatus = {
       totalVCs: data.records.length,
       activeVCs: data.records.filter((record: any) => record.fields['VC/Investor Name']).length,
+      vcsWithAirtableWebsites: vcsWithAirtableWebsites.length,
+      vcsWithoutAirtableWebsites: vcsWithoutAirtableWebsites.length,
+      vcsWithFallbackUrls: vcsWithFallbackUrls.length,
+      totalResolvableUrls: totalResolvableUrls,
+      websiteCompletionRate: Math.round((totalResolvableUrls / data.records.length) * 100),
+      airtableOnlyRate: Math.round((vcsWithAirtableWebsites.length / data.records.length) * 100),
+      fallbackOnlyRate: Math.round((vcsWithFallbackUrls.length / data.records.length) * 100),
+      totalVCsInFallbackDB: vcUrlsArray.length,
+      missingWebsiteVCs: vcsWithoutAirtableWebsites
+        .filter((record: any) => !vcUrlMap[record.fields['VC/Investor Name']])
+        .slice(0, 10)
+        .map((record: any) => record.fields['VC/Investor Name']),
       lastSync: new Date().toISOString(),
       syncInProgress: false,
       totalRecords: data.records.length

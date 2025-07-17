@@ -17,8 +17,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const token = authHeader.substring(7);
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-for-development';
-    
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return res.status(500).json({ error: 'JWT secret not configured' });
+    }
+
     let decoded;
     try {
       decoded = jwt.verify(token, jwtSecret) as any;
@@ -54,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Save feedback to Airtable using your existing field structure
     const airtableApiKey = process.env.AIRTABLE_API_KEY;
-    const airtableBaseId = process.env.BASE_ID || process.env.AIRTABLE_BASE_ID; // Support both variable names
+    const airtableBaseId = process.env.BASE_ID;
 
     if (airtableApiKey && airtableBaseId) {
       try {

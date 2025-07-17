@@ -27,7 +27,7 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
-import { createVcLinkFast } from '../utils/vc-utils';
+import { createVcLinkFast, testVcLookup } from '../utils/vc-utils';
 
 
 interface VCInvestor {
@@ -779,12 +779,24 @@ export default function ClientDashboard() {
 
             {/* Matches Grid */}
             <div className="matches-grid grid justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto p-5">
-              {matches.map((match) => {
+              {matches.map((match, index) => {
                 // Create VC link using utility function
+                const vcName = match.vcInvestor?.name || match.vcName || "Unknown VC";
+                
+                // Debug specific problematic VCs
+                if (index === 0) {
+                  console.log('🧪 Testing VC lookup for first few matches...');
+                  testVcLookup('ATEM Capital');
+                  testVcLookup('Brainchild Holdings');
+                  testVcLookup(vcName);
+                }
+                
                 const vcLink = createVcLinkFast(
-                  match.vcInvestor?.name || match.vcName || "Unknown VC",
+                  vcName,
                   match.vcInvestor?.website
                 );
+
+                console.log(`🔗 VC Link Result for "${vcName}":`, vcLink);
 
                 return (
                   <Card key={match.id} className="hover:shadow-lg transition-shadow">

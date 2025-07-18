@@ -24,7 +24,7 @@ function Router() {
   
   console.log('=== ROUTER DEBUG ===');
   console.log('Current location:', window.location.pathname);
-  console.log('Available routes: /, /team, /contact, /get-matched, /admin, /admin/clients, /airtable-test, /client-test, /client/login, /client/dashboard, /client-portal, /test, /vc-timeline');
+  console.log('Available routes: /, /team, /contact, /get-matched, /admin, /admin/clients, /airtable-test, /client-test, /client/login, /client/dashboard, /client/forgot-password, /client/reset-password, /client-portal, /test, /vc-timeline');
   
   return (
     <Switch>

@@ -14,6 +14,7 @@ import crypto from "crypto";
 
 // Import SUBMISSION_FIELDS from airtable.ts to ensure consistency
 import { SUBMISSION_FIELDS } from "../airtable.js";
+import { emailService } from "../services/email";
 
 // Import Airtable credentials for feedback endpoint
 const AIRTABLE_API_KEY = 'patPnlxR05peVEnUc.e5a8cfe5a3f88676da4b3c124c99ed46026b4f869bb5b6a3f54cd45db17fd58f';
@@ -834,18 +835,18 @@ router.post("/forgot-password", async (req: Request, res: Response) => {
 
     await airtableService.updateStartup(clientCompany.id, updateFields);
 
-    // In a production environment, you would send an email here
-    // For now, we'll log the reset link
+    // Generate reset link and send email
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/client/reset-password?token=${resetToken}`;
-    console.log('=== PASSWORD RESET LINK ===');
-    console.log('Email:', email);
-    console.log('Reset link:', resetLink);
-    console.log('Expires at:', resetExpiry);
-    console.log('========================');
-
-    // TODO: Implement email sending service
-    // Example with SendGrid, Mailgun, or AWS SES:
-    // await emailService.sendPasswordResetEmail(email, resetLink);
+    
+    // Send password reset email
+    console.log('📧 Sending password reset email to:', email);
+    const emailSent = await emailService.sendPasswordResetEmail(email, resetLink);
+    
+    if (emailSent) {
+      console.log('✅ Password reset email sent successfully');
+    } else {
+      console.log('❌ Failed to send password reset email');
+    }
 
     return res.json({
       success: true,

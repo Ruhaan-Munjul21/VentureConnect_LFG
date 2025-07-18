@@ -556,29 +556,36 @@ export default function ClientDashboard() {
 
     try {
       setSubmittingFeedback(true);
-      const response = await fetch(`/api/client/matches/${matchId}/feedback`, {
+      
+      // Test with simple endpoint first
+      const response = await fetch(`/api/client/test-feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ 
+          matchId,
           matchQuality, 
           feedbackText: feedbackText || '' 
         })
       });
 
+      console.log('🧪 Test feedback response:', response.status);
+      const responseData = await response.json();
+      console.log('🧪 Test feedback data:', responseData);
+
       if (response.ok) {
-        console.log('Feedback submitted successfully');
+        console.log('✅ Test feedback submitted successfully');
         setFeedbackDialogOpen(false);
         setSelectedMatchForFeedback(null);
         // Optionally show a success message
       } else {
-        console.error('Failed to submit feedback');
+        console.error('❌ Test feedback failed:', response.status);
         setError('Failed to submit feedback');
       }
     } catch (err) {
-      console.error('Error submitting feedback:', err);
+      console.error('💥 Error submitting test feedback:', err);
       setError('Error submitting feedback');
     } finally {
       setSubmittingFeedback(false);

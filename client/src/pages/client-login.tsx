@@ -316,13 +316,13 @@ export default function ClientLogin() {
             </form>
             <div className="mt-6 text-center text-sm text-gray-600">
               <p>
-                Don't have access?{' '}
+                Forgot password?{' '}
                 <Button
                   variant="link"
-                  onClick={() => setLocation('/get-matched')}
+                  onClick={() => setLocation('/client/forgot-password')}
                   className="text-blue-600 hover:text-blue-800 font-medium p-0 h-auto"
                 >
-                  Apply for VentriLinks
+                  Click here to reset it
                 </Button>
               </p>
             </div>

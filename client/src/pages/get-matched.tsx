@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
+import { Globe, LogOut } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 export default function GetMatched() {
   const [user, setUser] = useState<any>(null);
   const [formStatus, setFormStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const formRef = useRef<HTMLDivElement>(null);
+  const [, setLocation] = useLocation();
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -247,25 +250,88 @@ export default function GetMatched() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-        <button className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => window.location.href = '/'}>
-          Back to Home
-        </button>
-        
-        <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
-          <h2 className="text-2xl font-bold mb-6 text-center">Sign in to Access Beta</h2>
-          
-          {/* Email Login */}
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">
-              Sign in with your email and password to access the form
-            </p>
-            <button 
-              onClick={() => window.location.href = '/client/login'}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Sign In with Email
-            </button>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header matching Client Portal */}
+        <header className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              {/* VentriLinks Logo and Name - Clickable Home Link */}
+              <div 
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity" 
+                onClick={() => {
+                  setLocation('/');
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 100);
+                }}
+              >
+                <img 
+                  src="/images/1.png" 
+                  alt="VentriLinks Logo" 
+                  className="h-10 w-10 mr-2 rounded-full bg-white border border-gray-200 object-cover object-center" 
+                  style={{minWidth:'40px'}} 
+                />
+                <h1 className="text-xl font-bold text-primary hover:text-accent transition-colors">
+                  VentriLinks
+                </h1>
+              </div>
+              
+              {/* Header Navigation Button */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setLocation('/');
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 100);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                <Globe className="h-4 w-4" />
+                Back to Home
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* Sign in form content */}
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4">
+          <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
+            {/* VentriLinks icon */}
+            <div className="flex justify-center mb-6">
+              <img 
+                src="/images/1.png" 
+                alt="VentriLinks Logo" 
+                className="h-16 w-16 rounded-full bg-white border border-gray-200 object-cover object-center" 
+              />
+            </div>
+            
+            <h2 className="text-2xl font-bold mb-6 text-center">Sign in to Access Beta</h2>
+            
+            {/* Email Login */}
+            <div className="text-center">
+              <p className="text-gray-600 mb-6">
+                Sign in with your email and password to access the form
+              </p>
+              <button 
+                onClick={() => setLocation('/client/login')}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+              >
+                Sign In with Email
+              </button>
+              
+              {/* Don't have an account link */}
+              <div className="mt-6 text-sm text-gray-600">
+                Don't have an account?{' '}
+                <button
+                  onClick={() => setLocation('/client/login')}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Create an account
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

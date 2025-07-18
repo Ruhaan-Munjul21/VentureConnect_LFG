@@ -14,6 +14,8 @@ import AirtableTest from "@/pages/airtable-test";
 import ClientTest from "@/pages/client-test";
 import ClientLogin from "@/pages/client-login";
 import ClientDashboard from "@/pages/client-dashboard";
+import ClientForgotPassword from "@/pages/client-forgot-password";
+import ClientResetPassword from "@/pages/client-reset-password";
 import VCTimeline from "@/pages/vc-timeline";
 import { useLocation } from "wouter";
 
@@ -36,6 +38,8 @@ function Router() {
       <Route path="/client-test" component={ClientTest} />
       <Route path="/client/login" component={ClientLogin} />
       <Route path="/client/dashboard" component={ClientDashboard} />
+      <Route path="/client/forgot-password" component={ClientForgotPassword} />
+      <Route path="/client/reset-password" component={ClientResetPassword} />
       <Route path="/client-portal" component={() => { 
         // FIX: Use wouter navigation instead of window.location.href
         setLocation('/client/dashboard');

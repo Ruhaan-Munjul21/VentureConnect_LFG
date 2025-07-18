@@ -15,6 +15,10 @@ import crypto from "crypto";
 // Import SUBMISSION_FIELDS from airtable.ts to ensure consistency
 import { SUBMISSION_FIELDS } from "../airtable.js";
 
+// Import Airtable credentials for feedback endpoint
+const AIRTABLE_API_KEY = 'patPnlxR05peVEnUc.e5a8cfe5a3f88676da4b3c124c99ed46026b4f869bb5b6a3f54cd45db17fd58f';
+const BASE_ID = 'app768aQ07mCJoyu8';
+
 const router = express.Router();
 
 // Middleware to authenticate client requests
@@ -679,6 +683,237 @@ router.post("/mark-form-complete", authenticateClient, async (req: Request, res:
     return res.status(500).json({
       success: false,
       message: "Internal server error"
+    });
+  }
+});
+
+// POST /api/client/test-feedback - Simple test endpoint for feedback
+router.post("/test-feedback", authenticateClient, async (req: Request, res: Response) => {
+  try {
+    const clientCompany = (req as any).clientCompany;
+    const { matchId, matchQuality, feedbackText } = req.body;
+    
+    console.log('=== TEST FEEDBACK SUBMISSION ===');
+    console.log('Match ID:', matchId);
+    console.log('Client:', clientCompany.companyName);
+    console.log('Match Quality:', matchQuality);
+    console.log('Feedback Text:', feedbackText);
+    
+    // For now, just log and return success
+    // In production, this would save to a database or Airtable
+    
+    res.json({
+      success: true,
+      message: "Feedback received successfully",
+      data: {
+        matchId,
+        matchQuality,
+        feedbackText,
+        clientName: clientCompany.companyName,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error("Test feedback error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process feedback"
+    });
+  }
+});
+
+// POST /api/client/matches/:id/feedback - Submit feedback for a match
+router.post("/matches/:id/feedback", authenticateClient, async (req: Request, res: Response) => {
+  try {
+    const clientCompany = (req as any).clientCompany;
+    const matchId = parseInt(req.params.id);
+    const { matchQuality, feedbackText } = req.body;
+    
+    console.log('=== FEEDBACK SUBMISSION ===');
+    console.log('Match ID:', matchId);
+    console.log('Client:', clientCompany.companyName);
+    console.log('Match Quality:', matchQuality);
+    console.log('Feedback Text:', feedbackText);
+    
+    // For now, just store the feedback in Airtable as part of the match record
+    // We'll need to add feedback fields to the Airtable schema
+    
+    // Get the match from Airtable to verify it belongs to this client
+    const matches = await airtableService.getMatches();
+    const match = matches.find((m: any) => {
+      const transformed = airtableService.transformMatchToClientMatch(m);
+      return transformed.startupName === clientCompany.companyName && 
+             transformed.vcName === req.body.vcName; // We'll need to pass vcName from frontend
+    });
+    
+    if (!match) {
+      return res.status(404).json({
+        success: false,
+        message: "Match not found"
+      });
+    }
+    
+    // Update the match record with feedback
+    // Note: You'll need to add these fields to Airtable first
+    const updateFields = {
+      'Client Feedback Quality': matchQuality,
+      'Client Feedback Text': feedbackText,
+      'Client Feedback Date': new Date().toISOString()
+    };
+    
+    // Update the match in Airtable
+    const updateUrl = `https://api.airtable.com/v0/${BASE_ID}/Startup-VC Matches (POST GPT PRE-SCAN)/${match.id}`;
+    const updateResponse = await fetch(updateUrl, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ fields: updateFields })
+    });
+    
+    if (!updateResponse.ok) {
+      console.error('Failed to update match with feedback:', await updateResponse.text());
+      return res.status(500).json({
+        success: false,
+        message: "Failed to save feedback"
+      });
+    }
+    
+    console.log('✅ Feedback saved successfully');
+    
+    res.json({
+      success: true,
+      message: "Feedback submitted successfully"
+    });
+  } catch (error) {
+    console.error("Feedback submission error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to submit feedback"
+    });
+  }
+});
+
+// POST /api/client/forgot-password - Request password reset
+router.post("/forgot-password", async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
+    }
+
+    // Find user by email in Airtable
+    const startups = await airtableService.getStartups();
+    const clientCompany = startups.find((startup: any) => {
+      const transformed = airtableService.transformStartupToClient(startup);
+      return transformed.email?.toLowerCase() === email.toLowerCase();
+    });
+
+    if (!clientCompany) {
+      // Don't reveal if email exists or not for security
+      return res.json({
+        success: true,
+        message: "If an account exists with this email, you will receive password reset instructions."
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    // Store reset token in Airtable (you'll need to add these fields to your Airtable)
+    const updateFields = {
+      'Password Reset Token': resetToken,
+      'Password Reset Expiry': resetExpiry.toISOString()
+    };
+
+    await airtableService.updateStartup(clientCompany.id, updateFields);
+
+    // In a production environment, you would send an email here
+    // For now, we'll log the reset link
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/client/reset-password?token=${resetToken}`;
+    console.log('=== PASSWORD RESET LINK ===');
+    console.log('Email:', email);
+    console.log('Reset link:', resetLink);
+    console.log('Expires at:', resetExpiry);
+    console.log('========================');
+
+    // TODO: Implement email sending service
+    // Example with SendGrid, Mailgun, or AWS SES:
+    // await emailService.sendPasswordResetEmail(email, resetLink);
+
+    return res.json({
+      success: true,
+      message: "If an account exists with this email, you will receive password reset instructions."
+    });
+
+  } catch (error) {
+    console.error("Password reset request error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to process password reset request"
+    });
+  }
+});
+
+// POST /api/client/reset-password - Reset password with token
+router.post("/reset-password", async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and password are required"
+      });
+    }
+
+    // Find user by reset token
+    const startups = await airtableService.getStartups();
+    const clientCompany = startups.find((startup: any) => {
+      return startup.fields['Password Reset Token'] === token;
+    });
+
+    if (!clientCompany) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token"
+      });
+    }
+
+    // Check if token is expired
+    const expiryTime = clientCompany.fields['Password Reset Expiry'];
+    if (expiryTime && new Date(expiryTime) < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset token has expired"
+      });
+    }
+
+    // Update password and clear reset token
+    const updateFields = {
+      'Password': password,
+      'Password Reset Token': '',
+      'Password Reset Expiry': ''
+    };
+
+    await airtableService.updateStartup(clientCompany.id, updateFields);
+
+    return res.json({
+      success: true,
+      message: "Password has been reset successfully"
+    });
+
+  } catch (error) {
+    console.error("Password reset error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reset password"
     });
   }
 });

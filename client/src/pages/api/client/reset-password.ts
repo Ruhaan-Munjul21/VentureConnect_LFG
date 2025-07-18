@@ -10,7 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Forward request to backend server
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
-    const response = await fetch(`${backendUrl}/api/client/reset-password`, {
+    // In production with same domain, use relative URL
+    const apiUrl = process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL 
+      ? '/api/client/reset-password' 
+      : `${backendUrl}/api/client/reset-password`;
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

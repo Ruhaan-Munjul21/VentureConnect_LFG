@@ -727,7 +727,7 @@ router.post("/test-feedback", authenticateClient, async (req: Request, res: Resp
 router.post("/matches/:id/feedback", authenticateClient, async (req: Request, res: Response) => {
   try {
     const clientCompany = (req as any).clientCompany;
-    const matchId = parseInt(req.params.id);
+    const matchId = req.params.id; // Keep as string for Airtable IDs
     const { matchQuality, feedbackText } = req.body;
     
     console.log('=== FEEDBACK SUBMISSION ===');
@@ -736,34 +736,17 @@ router.post("/matches/:id/feedback", authenticateClient, async (req: Request, re
     console.log('Match Quality:', matchQuality);
     console.log('Feedback Text:', feedbackText);
     
-    // For now, just store the feedback in Airtable as part of the match record
-    // We'll need to add feedback fields to the Airtable schema
-    
-    // Get the match from Airtable to verify it belongs to this client
-    const matches = await airtableService.getMatches();
-    const match = matches.find((m: any) => {
-      const transformed = airtableService.transformMatchToClientMatch(m);
-      return transformed.startupName === clientCompany.companyName && 
-             transformed.vcName === req.body.vcName; // We'll need to pass vcName from frontend
-    });
-    
-    if (!match) {
-      return res.status(404).json({
-        success: false,
-        message: "Match not found"
-      });
-    }
-    
-    // Update the match record with feedback
-    // Note: You'll need to add these fields to Airtable first
+    // Update the match record with feedback directly using the matchId
     const updateFields = {
-      'Client Feedback Quality': matchQuality,
-      'Client Feedback Text': feedbackText,
-      'Client Feedback Date': new Date().toISOString()
+      'Startup Says Good ...': matchQuality,
+      'Startup Feedback': feedbackText || '',
+      'Feedback Date': new Date().toISOString()
     };
     
+    console.log('Updating match with fields:', updateFields);
+    
     // Update the match in Airtable
-    const updateUrl = `https://api.airtable.com/v0/${BASE_ID}/Startup-VC Matches (POST GPT PRE-SCAN)/${match.id}`;
+    const updateUrl = `https://api.airtable.com/v0/${BASE_ID}/Startup-VC Matches (POST GPT PRE-SCAN)/${matchId}`;
     const updateResponse = await fetch(updateUrl, {
       method: 'PATCH',
       headers: {
@@ -773,15 +756,19 @@ router.post("/matches/:id/feedback", authenticateClient, async (req: Request, re
       body: JSON.stringify({ fields: updateFields })
     });
     
+    console.log('Airtable update response status:', updateResponse.status);
+    
     if (!updateResponse.ok) {
-      console.error('Failed to update match with feedback:', await updateResponse.text());
+      const errorText = await updateResponse.text();
+      console.error('Failed to update match with feedback:', errorText);
       return res.status(500).json({
         success: false,
-        message: "Failed to save feedback"
+        message: "Failed to save feedback",
+        details: errorText
       });
     }
     
-    console.log('✅ Feedback saved successfully');
+    console.log('✅ Feedback saved successfully to Airtable');
     
     res.json({
       success: true,
@@ -899,8 +886,8 @@ router.post("/reset-password", async (req: Request, res: Response) => {
     // Update password and clear reset token
     const updateFields = {
       'Password': password,
-      'Password Reset Token': '',
-      'Password Reset Expiry': ''
+      'Password Reset Token': null,
+      'Password Reset Expiry': null
     };
 
     await airtableService.updateStartup(clientCompany.id, updateFields);

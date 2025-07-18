@@ -13,37 +13,16 @@ export default function ClientForgotPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess(false);
-
+    
     if (!email.trim()) {
       setError('Please enter your email address');
-      setLoading(false);
       return;
     }
 
-    try {
-      const response = await fetch('/api/client/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setSuccess(true);
-      } else {
-        setError(data.message || 'Failed to send reset email');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    // Direct to support email for password reset
+    window.location.href = `mailto:support@ventrilinks.com?subject=Password Reset Request&body=Hi,%0D%0A%0D%0AI need help resetting my password for my VentriLinks account.%0D%0A%0D%0AEmail: ${encodeURIComponent(email)}%0D%0A%0D%0AThank you!`;
   };
 
   return (
@@ -92,7 +71,7 @@ export default function ClientForgotPassword() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">Reset Your Password</CardTitle>
               <CardDescription>
-                Enter your email address and we'll send you instructions to reset your password
+                Enter your email address and we'll help you reset your password
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -119,15 +98,8 @@ export default function ClientForgotPassword() {
                   </Alert>
                 )}
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending Reset Email...
-                    </>
-                  ) : (
-                    'Send Reset Email'
-                  )}
+                <Button type="submit" className="w-full">
+                  Contact Support
                 </Button>
               </form>
 
@@ -143,37 +115,7 @@ export default function ClientForgotPassword() {
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-green-600">Check Your Email</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p className="text-gray-600">
-                We've sent password reset instructions to:
-              </p>
-              <p className="font-semibold text-lg">{email}</p>
-              <p className="text-sm text-gray-500">
-                Please check your email and follow the instructions to reset your password. 
-                The link will expire in 1 hour.
-              </p>
-              <p className="text-sm text-gray-500">
-                If you don't see the email, please check your spam folder.
-              </p>
-              
-              <div className="pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setLocation('/client/login')}
-                  className="inline-flex items-center gap-1"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to Login
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        ) : null}
       </div>
     </div>
   );

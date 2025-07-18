@@ -322,7 +322,7 @@ export default function ClientLogin() {
                   onClick={() => setLocation('/client/forgot-password')}
                   className="text-blue-600 hover:text-blue-800 font-medium p-0 h-auto"
                 >
-                  Click here to reset it
+                  Contact support for help
                 </Button>
               </p>
             </div>

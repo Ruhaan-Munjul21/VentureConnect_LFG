@@ -557,8 +557,7 @@ export default function ClientDashboard() {
     try {
       setSubmittingFeedback(true);
       
-      // Test with simple endpoint first
-      const response = await fetch(`/api/client/test-feedback`, {
+      const response = await fetch(`/api/client/matches/${matchId}/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

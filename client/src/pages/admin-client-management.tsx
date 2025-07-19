@@ -29,7 +29,8 @@ import {
   RefreshCw,
   Save,
   X,
-  Link
+  Link,
+  Brain
 } from 'lucide-react';
 
 interface ClientCompany {
@@ -759,13 +760,27 @@ export default function AdminClientManagement() {
                     <div>
                       <div className="flex justify-between items-center mb-4">
                         <h4 className="font-medium">VC Matches ({startupMatches.length})</h4>
-                        <Button
-                          size="sm"
-                          onClick={() => startAddMatch(companyGroup.records[0])}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Match
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Generate a token for this startup (in production, use proper auth)
+                              const token = btoa(companyGroup.company);
+                              window.open(`/startup-analysis?token=${token}`, '_blank');
+                            }}
+                          >
+                            <Brain className="h-4 w-4 mr-2" />
+                            View AI Analysis
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => startAddMatch(companyGroup.records[0])}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Match
+                          </Button>
+                        </div>
                       </div>
                       {startupMatches.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">

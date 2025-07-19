@@ -1,0 +1,102 @@
+{
+  "detailed_scores": {
+    "team": {
+      "score": 0,
+      "justification": "",
+      "reasoning": ""
+    },
+    "technology": {
+      "score": 0,
+      "justification": "",
+      "reasoning": ""
+    },
+    "market": {
+      "score": 0,
+      "justification": "",
+      "reasoning": ""
+    },
+    "gtm_traction": {
+      "score": 0,
+      "justification": "",
+      "reasoning": ""
+    },
+    "competitive": {
+      "score": 0,
+      "justification": "",
+      "reasoning": ""
+    }
+  },
+  "overall_score": {
+    "overall": 5.0,
+    "team": 5,
+    "technology": 5,
+    "market": 5,
+    "gtm_traction": 5,
+    "competitive_positioning": 5,
+    "scale": "1-10 (10 = highest)",
+    "weighting": "Tech 30%, Team 25%, Market 25%, GTM 10%, Competitive 10%"
+  },
+  "swot_analysis": {
+    "strengths": "Strong founding team with relevant experience and innovative, patented technology.",
+    "weaknesses": "Lack of information about the market opportunity, go-to-market strategy, and competitive landscape.",
+    "opportunities": "The company could potentially address a significant problem in the field of rare genetic diseases.",
+    "threats": "The lack of information about the competitive landscape makes it difficult to assess potential threats."
+  },
+  "strategic_recommendations": [
+    "Provide more information about the market size and target customers.",
+    "Develop a clear go-to-market strategy and provide metrics related to customer acquisition and retention.",
+    "Provide more information about the competitive landscape and the company's unique selling proposition."
+  ],
+  "executive_summary": "Comprehensive VC analysis across 5 categories with weighted scoring.",
+  "strengths": [],
+  "weaknesses": [
+    "Lack of information about the market opportunity, go-to-market strategy, and competitive landscape."
+  ],
+  "company_overview": {
+    "name": "Protirna Therapeutics, Inc. - mRNA therapeutics company founded by Dr. Sarah Chen (PhD Stanford, former Moderna scientist) and Dr. Michael Rodriguez (MD/PhD Harvard, 10 years pharma experience at Pfizer). Targeting rare genetic diseases with proprietary delivery platform.",
+    "description": "",
+    "mission": "",
+    "therapeutic_focus": "Protirna Therapeutics, Inc. - mRNA therapeutics company founded by Dr. Sarah Chen (PhD Stanford, former Moderna scientist) and Dr. Michael Rodriguez (MD/PhD Harvard, 10 years pharma experience at Pfizer). Targeting rare genetic diseases with proprietary delivery platform. Problem: Current gene therapies have poor delivery efficiency (only 5-10% reach target cells). Our proprietary lipid nanoparticle platform achieves 85% delivery efficiency in preclinical studies. Platform validated in 3 disease",
+    "business_model": "",
+    "stage": "Unknown"
+  },
+  "technology_profile": {
+    "drug_modality": "mrna, gene therapy,",
+    "mechanism_of_action": "Protirna Therapeutics, Inc. - mRNA therapeutics company founded by Dr. Sarah Chen (PhD Stanford, former Moderna scientist) and Dr. Michael Rodriguez (MD/PhD Harvard, 10 years pharma experience at Pfizer). Targeting rare genetic diseases with proprietary delivery platform. Problem: Current gene therapies have poor delivery efficiency (only 5-10% reach target cells). Our proprietary lipid nanoparticle platform achieves 85% delivery efficiency in preclinical studies. Platform validated in 3 disease",
+    "platform_technology": "Protirna Therapeutics, Inc. - mRNA therapeutics company founded by Dr. Sarah Chen (PhD Stanford, former Moderna scientist) and Dr. Michael Rodriguez (MD/PhD Harvard, 10 years pharma experience at Pfizer). Targeting rare genetic diseases with proprietary delivery platform. Problem: Current gene therapies have poor delivery efficiency (only 5-10% reach target cells). Our proprietary lipid nanoparticle platform achieves 85% delivery efficiency in preclinical studies. Platform validated in 3 disease",
+    "pipeline": [],
+    "differentiation": "",
+    "ip_status": "Problem: Current gene therapies have poor delivery efficiency (only 5-10% reach target cells). Our proprietary lipid nanoparticle platform achieves 85% delivery efficiency in preclinical studies. Platform validated in 3 disease models. Filed 4 patents, 2 granted. Traction: Completed successful IND-enabling studies. Partnership discussions with Roche and Novartis. Received $2.5M NIH SBIR grant. 3 patients enrolled in compassionate use program showing 40% improvement in muscle function. Funding: R"
+  },
+  "market_analysis": {
+    "target_market": "",
+    "market_size": "Market: Rare disease gene therapy market is $8.2B globally, growing 15% annually. TAM $45B by 2030. Target initial indication: Duchenne Muscular Dystrophy (DMD) - 300,000 patients globally, current treatments only $2-5B market but poor efficacy.",
+    "competitive_landscape": "",
+    "key_competitors": [],
+    "market_opportunity": "",
+    "regulatory_pathway": "Problem: Current gene therapies have poor delivery efficiency (only 5-10% reach target cells). Our proprietary lipid nanoparticle platform achieves 85% delivery efficiency in preclinical studies. Platform validated in 3 disease models. Filed 4 patents, 2 granted. Funding: Raising $15M Series A. Use of funds: 60% clinical trial execution, 25% manufacturing scale-up, 15% team expansion. Timeline: IND filing Q2 2025, Phase 1 start Q4 2025. Team of 12 including 3 PhDs and regulatory consultant."
+  },
+  "team_profile": {
+    "leadership_team": [],
+    "advisory_board": [],
+    "key_expertise": "",
+    "academic_affiliations": "Protirna Therapeutics, Inc. - mRNA therapeutics company founded by Dr. Sarah Chen (PhD Stanford, former Moderna scientist) and Dr. Michael Rodriguez (MD/PhD Harvard, 10 years pharma experience at Pfizer). Targeting rare genetic diseases with proprietary delivery platform. Funding: Raising $15M Series A. Use of funds: 60% clinical trial execution, 25% manufacturing scale-up, 15% team expansion. Timeline: IND filing Q2 2025, Phase 1 start Q4 2025. Team of 12 including 3 PhDs and regulatory consult",
+    "industry_experience": "Protirna Therapeutics, Inc. - mRNA therapeutics company founded by Dr. Sarah Chen (PhD Stanford, former Moderna scientist) and Dr. Michael Rodriguez (MD/PhD Harvard, 10 years pharma experience at Pfizer). Targeting rare genetic diseases with proprietary delivery platform."
+  },
+  "funding_profile": {
+    "funding_stage": "",
+    "amount_raising": "Funding: Raising $15M Series A. Use of funds: 60% clinical trial execution, 25% manufacturing scale-up, 15% team expansion. Timeline: IND filing Q2 2025, Phase 1 start Q4 2025. Team of 12 including 3 PhDs and regulatory consultant.",
+    "valuation": "",
+    "use_of_funds": "Funding: Raising $15M Series A. Use of funds: 60% clinical trial execution, 25% manufacturing scale-up, 15% team expansion. Timeline: IND filing Q2 2025, Phase 1 start Q4 2025. Team of 12 including 3 PhDs and regulatory consultant.",
+    "investors": [
+      "Traction: Completed successful IND-enabling studies. Partnership discussions with Roche and Novartis. Received $2.5M NIH SBIR grant. 3 patients enrolled in compassionate use program showing 40% improvement in muscle function.",
+      "Funding: Raising $15M Series A. Use of funds: 60% clinical trial execution, 25% manufacturing scale-up, 15% team expansion. Timeline: IND filing Q2 2025, Phase 1 start Q4 2025. Team of 12 including 3 PhDs and regulatory consultant."
+    ],
+    "milestones": ""
+  },
+  "analysis_metadata": {
+    "model": "gpt-4",
+    "timestamp": 1752894098.291425,
+    "token_usage": 1889
+  }
+}

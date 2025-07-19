@@ -738,7 +738,7 @@ router.post("/matches/:id/feedback", authenticateClient, async (req: Request, re
     
     // Update the match record with feedback directly using the matchId
     const updateFields = {
-      'Startup Says Good (Good Match, Maybe, Not Sure, Poor Match)': matchQuality,
+      'Startup Says Good': matchQuality,
       'Startup Feedback': feedbackText || ''
     };
     

@@ -25,7 +25,12 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
-  FileText
+  FileText,
+  Copy,
+  Send,
+  Calendar,
+  Activity,
+  Star
 } from 'lucide-react';
 import { createVcLinkFast, testVcLookup } from '../utils/vc-utils';
 
@@ -80,11 +85,15 @@ interface ClientProfile {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'not_contacted', label: 'Not Contacted', color: 'bg-gray-100 text-gray-800' },
-  { value: 'contacted', label: 'Contacted', color: 'bg-blue-100 text-blue-800' },
-  { value: 'responded', label: 'Responded', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'meeting_scheduled', label: 'Meeting Scheduled', color: 'bg-purple-100 text-purple-800' },
-  { value: 'deal_closed', label: 'Deal Closed', color: 'bg-green-100 text-green-800' },
+  { value: 'not_contacted', label: 'Not Contacted', color: 'bg-gray-100 text-gray-800', icon: '⭕' },
+  { value: 'email_sent', label: 'Email Sent', color: 'bg-blue-100 text-blue-800', icon: '📧' },
+  { value: 'email_opened', label: 'Email Opened', color: 'bg-indigo-100 text-indigo-800', icon: '👀' },
+  { value: 'responded', label: 'Responded', color: 'bg-yellow-100 text-yellow-800', icon: '💬' },
+  { value: 'meeting_scheduled', label: 'Meeting Scheduled', color: 'bg-purple-100 text-purple-800', icon: '📅' },
+  { value: 'meeting_completed', label: 'Meeting Completed', color: 'bg-teal-100 text-teal-800', icon: '✅' },
+  { value: 'deal_in_progress', label: 'Deal in Progress', color: 'bg-orange-100 text-orange-800', icon: '🔄' },
+  { value: 'deal_closed', label: 'Deal Closed', color: 'bg-green-100 text-green-800', icon: '🎉' },
+  { value: 'passed', label: 'Passed', color: 'bg-red-100 text-red-800', icon: '❌' },
 ];
 
 // CountdownTimer component
@@ -168,6 +177,18 @@ export default function ClientDashboard() {
     matchQuality: '',
     feedbackText: ''
   });
+
+  // Email generation state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [generatedEmail, setGeneratedEmail] = useState('');
+  const [generatingEmail, setGeneratingEmail] = useState(false);
+  const [selectedMatchForEmail, setSelectedMatchForEmail] = useState<ClientMatch | null>(null);
+
+  // Status tracking state
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedMatchForStatus, setSelectedMatchForStatus] = useState<ClientMatch | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [statusForm, setStatusForm] = useState({ status: '', notes: '' });
 
   const [, setLocation] = useLocation();
   const [profile, setProfile] = useState<ClientProfile | null>(null);
@@ -591,6 +612,116 @@ export default function ClientDashboard() {
     }
   };
 
+  // Function to generate personalized email
+  const generateEmail = async (match: ClientMatch) => {
+    const token = localStorage.getItem('clientToken');
+    if (!token) return;
+
+    try {
+      setGeneratingEmail(true);
+      setSelectedMatchForEmail(match);
+      
+      const response = await fetch(`/api/client/matches/${match.id}/generate-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedEmail(data.email);
+        setEmailDialogOpen(true);
+        console.log('✅ Email generated successfully');
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Email generation failed:', errorData);
+        setError('Failed to generate email');
+      }
+    } catch (err) {
+      console.error('💥 Error generating email:', err);
+      setError('Error generating email');
+    } finally {
+      setGeneratingEmail(false);
+    }
+  };
+
+  // Function to copy email to clipboard
+  const copyEmailToClipboard = () => {
+    navigator.clipboard.writeText(generatedEmail);
+    // Could add a toast notification here
+  };
+
+  // Function to open status dialog
+  const openStatusDialog = (match: ClientMatch) => {
+    setSelectedMatchForStatus(match);
+    setStatusForm({
+      status: match.progress?.status || 'not_contacted',
+      notes: match.progress?.notes || ''
+    });
+    setStatusDialogOpen(true);
+  };
+
+  // Function to update match status
+  const updateMatchStatus = async () => {
+    if (!selectedMatchForStatus) return;
+
+    const token = localStorage.getItem('clientToken');
+    if (!token) return;
+
+    try {
+      setUpdatingStatus(true);
+      
+      const response = await fetch(`/api/client/matches/${selectedMatchForStatus.id}/update-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: statusForm.status,
+          notes: statusForm.notes
+        })
+      });
+
+      if (response.ok) {
+        // Update the local state
+        setMatches(prevMatches => 
+          prevMatches.map(match => 
+            match.id === selectedMatchForStatus.id 
+              ? {
+                  ...match,
+                  progress: {
+                    ...match.progress,
+                    status: statusForm.status,
+                    notes: statusForm.notes,
+                    lastUpdated: new Date().toISOString()
+                  }
+                }
+              : match
+          )
+        );
+        setStatusDialogOpen(false);
+        console.log('✅ Status updated successfully');
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Status update failed:', errorData);
+        setError('Failed to update status');
+      }
+    } catch (err) {
+      console.error('💥 Error updating status:', err);
+      setError('Error updating status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  // Function to get status display info
+  const getStatusInfo = (status: string) => {
+    return STATUS_OPTIONS.find(option => option.value === status) || STATUS_OPTIONS[0];
+  };
+
     // Remove getStatusStats function and all stats-related code
 
     // ADD DEBUGGING LOGS FOR RENDER
@@ -668,6 +799,15 @@ export default function ClientDashboard() {
                 Back to Home
               </Button>
               
+              <Button
+                onClick={() => setLocation('/premium-support')}
+                className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                size="sm"
+              >
+                <Star className="h-4 w-4" />
+                Premium Support
+              </Button>
+
               <Button 
                 variant="outline" 
                 size="sm"
@@ -857,6 +997,22 @@ export default function ClientDashboard() {
                             </p>
                           )}
                         </div>
+
+                        {/* Outreach Status */}
+                        <div className="mb-3">
+                          {(() => {
+                            const statusInfo = getStatusInfo(match.progress?.status || 'not_contacted');
+                            return (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-600">Outreach Status:</span>
+                                <Badge className={`${statusInfo.color} flex items-center gap-1`}>
+                                  <span>{statusInfo.icon}</span>
+                                  {statusInfo.label}
+                                </Badge>
+                              </div>
+                            );
+                          })()}
+                        </div>
                         
                         <div className="match-actions flex flex-col gap-3 items-start">
                           {(match.matchReasoning || match.portfolioReasoning) && (
@@ -875,6 +1031,38 @@ export default function ClientDashboard() {
                               <span>🧬</span> Why this match?
                             </a>
                           )}
+                          
+                          {/* Update Status Button */}
+                          <Button
+                            onClick={() => openStatusDialog(match)}
+                            variant="outline"
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium flex items-center gap-1"
+                            size="sm"
+                          >
+                            <Activity className="h-3 w-3" />
+                            Update Status
+                          </Button>
+
+                          {/* Generate Email Button */}
+                          <Button
+                            onClick={() => generateEmail(match)}
+                            disabled={generatingEmail}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium flex items-center gap-1"
+                            size="sm"
+                          >
+                            {generatingEmail ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Mail className="h-3 w-3" />
+                                Generate Email
+                              </>
+                            )}
+                          </Button>
+                          
                           {/* Leave Feedback Button */}
                           <Button
                             onClick={() => openFeedbackDialog(match)}
@@ -977,6 +1165,125 @@ export default function ClientDashboard() {
               Close
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Generation Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Personalized Email</DialogTitle>
+            <DialogDescription>
+              AI-generated personalized email for {selectedMatchForEmail?.vcInvestor?.name || selectedMatchForEmail?.vcName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {generatedEmail && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 border rounded-lg p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-gray-700">Generated Email:</span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={copyEmailToClipboard}
+                      className="flex items-center gap-1"
+                    >
+                      <Copy className="h-3 w-3" />
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+                <div className="bg-white border rounded p-4 font-mono text-sm whitespace-pre-line max-h-96 overflow-y-auto">
+                  {generatedEmail}
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <Mail className="h-4 w-4 text-blue-600 mt-0.5" />
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium">Next Steps:</p>
+                    <p>Copy this email and customize it further in your email client. Consider adding specific details about your recent achievements or mutual connections.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Status Update Dialog */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Outreach Status</DialogTitle>
+            <DialogDescription>
+              Track your fundraising progress with {selectedMatchForStatus?.vcInvestor?.name || selectedMatchForStatus?.vcName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedMatchForStatus && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Current Status</label>
+                <Select 
+                  value={statusForm.status}
+                  onValueChange={(value) => setStatusForm(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          <span>{option.icon}</span>
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Notes (optional)</label>
+                <Textarea
+                  placeholder="Add any notes about this interaction..."
+                  value={statusForm.notes}
+                  onChange={(e) => setStatusForm(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={updateMatchStatus}
+                  disabled={updatingStatus || !statusForm.status}
+                >
+                  {updatingStatus ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Status'
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

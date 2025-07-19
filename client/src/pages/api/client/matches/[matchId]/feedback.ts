@@ -1,5 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import jwt from 'jsonwebtoken';
+
+// Import storage to verify token same way as server routes
+import { storage } from '../../../../../server/storage';
+import { airtableService } from '../../../../../server/airtable';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log('🚀 FEEDBACK API CALLED:', {
@@ -28,24 +31,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const token = authHeader.substring(7);
-    const jwtSecret = process.env.JWT_SECRET;
-    console.log('🔐 JWT Secret present:', !!jwtSecret);
+    console.log('🔐 Token extracted:', token ? '[PRESENT]' : '[MISSING]');
     
-    if (!jwtSecret) {
-      console.log('❌ JWT secret not configured');
-      return res.status(500).json({ error: 'JWT secret not configured' });
+    // Use same authentication as server routes
+    const authToken = await storage.getClientAuthToken(token);
+    console.log('Auth token found:', !!authToken);
+    console.log('Auth token data:', authToken);
+    
+    if (!authToken) {
+      console.log('❌ Invalid or expired token');
+      return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    let decoded;
-    try {
-      decoded = jwt.verify(token, jwtSecret) as any;
-      console.log('✅ Token verified for email:', decoded.email);
-    } catch (error) {
-      console.log('❌ Token verification failed:', error);
-      return res.status(401).json({ error: 'Invalid token' });
+    // Get client from Airtable using the stored clientCompanyId
+    const startups = await airtableService.getStartups();
+    console.log('Total startups found:', startups.length);
+    
+    // Try to find by the stored clientCompanyId (which should be the Airtable ID)
+    let clientCompany = startups.find((startup: any) => {
+      console.log('Checking startup ID:', startup.id, 'against stored ID:', authToken.clientCompanyId);
+      return startup.id === authToken.clientCompanyId.toString();
+    });
+
+    if (!clientCompany) {
+      console.log('❌ Client not found by ID, authentication failed');
+      return res.status(401).json({ error: 'Client company not found. Please log in again.' });
     }
 
-    const clientEmail = decoded.email;
+    console.log('✅ Client found:', clientCompany.id);
+    console.log('Client company name:', clientCompany.fields['Startup Name']);
+
+    const clientEmail = clientCompany.fields['Email'];
     const { matchQuality, feedbackText } = req.body;
     console.log('📊 Feedback data:', { matchQuality, feedbackText: !!feedbackText });
 
@@ -70,60 +86,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('💬 FEEDBACK SUBMITTED:', feedbackData);
 
-    // Save to Airtable
-    const airtableApiKey = process.env.AIRTABLE_API_KEY;
-    const airtableBaseId = process.env.BASE_ID;
-    console.log('🗄️ Airtable config:', { hasApiKey: !!airtableApiKey, hasBaseId: !!airtableBaseId });
-
-    if (airtableApiKey && airtableBaseId) {
-      try {
-        console.log('🔍 Searching for existing record...');
-        const searchResponse = await fetch(`https://api.airtable.com/v0/${airtableBaseId}/Client%20Matches?filterByFormula=AND({Match ID}='${matchId}',{Client Email}='${clientEmail}')`, {
-          headers: {
-            'Authorization': `Bearer ${airtableApiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
-          console.log('📋 Search results:', { recordCount: searchData.records?.length || 0 });
-          
-          if (searchData.records && searchData.records.length > 0) {
-            const recordId = searchData.records[0].id;
-            console.log('🔄 Updating record:', recordId);
-            
-            const updateResponse = await fetch(`https://api.airtable.com/v0/${airtableBaseId}/Client%20Matches/${recordId}`, {
-              method: 'PATCH',
-              headers: {
-                'Authorization': `Bearer ${airtableApiKey}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                fields: {
-                  'Startup Says Good': matchQuality,
-                  'Startup Feedback': feedbackText || ''
-                }
-              })
-            });
-
-            if (updateResponse.ok) {
-              console.log('✅ Airtable record updated successfully');
-            } else {
-              console.log('❌ Failed to update Airtable record:', updateResponse.status);
-            }
-          } else {
-            console.log('⚠️ No matching record found in Airtable');
-          }
-        } else {
-          console.log('❌ Airtable search failed:', searchResponse.status);
-        }
-      } catch (error) {
-        console.log('⚠️ Error saving feedback to Airtable:', error);
-      }
-    } else {
-      console.log('⚠️ Airtable not configured, skipping save');
+    // Save feedback directly to the match record in Airtable (same as server route)
+    const AIRTABLE_API_KEY = 'patPnlxR05peVEnUc.e5a8cfe5a3f88676da4b3c124c99ed46026b4f869bb5b6a3f54cd45db17fd58f';
+    const BASE_ID = 'app768aQ07mCJoyu8';
+    
+    // Update the match record with feedback directly using the matchId
+    const updateFields = {
+      'Startup Says Good': matchQuality,
+      'Startup Feedback': feedbackText || ''
+    };
+    
+    console.log('Updating match with fields:', updateFields);
+    
+    // Update the match in Airtable
+    const updateUrl = `https://api.airtable.com/v0/${BASE_ID}/Startup-VC Matches (POST GPT PRE-SCAN)/${matchId}`;
+    const updateResponse = await fetch(updateUrl, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ fields: updateFields })
+    });
+    
+    console.log('Airtable update response status:', updateResponse.status);
+    
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text();
+      console.error('Failed to update match with feedback:', errorText);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to save feedback",
+        details: errorText
+      });
     }
+    
+    console.log('✅ Feedback saved successfully to Airtable');
 
     console.log('✅ Sending success response');
     res.status(200).json({

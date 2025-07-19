@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Loader2, RefreshCw, Eye, Send, Check, X, Download, Users, Target, TrendingUp, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Building2, Loader2, RefreshCw, Eye, Send, Check, X, Download, Users, Target, TrendingUp, AlertCircle, ChevronDown, ChevronRight, Brain, BarChart3, Star, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const AIRTABLE_API_KEY = 'patPnlxR05peVEnUc.e5a8cfe5a3f88676da4b3c124c99ed46026b4f869bb5b6a3f54cd45db17fd58f';
@@ -113,6 +113,15 @@ export default function AdminDashboard() {
   const [isRunningMatch, setIsRunningMatch] = useState(false);
   const [selectedStartups, setSelectedStartups] = useState([]);
   const [matchingStatus, setMatchingStatus] = useState({});
+  
+  // Add analysis state
+  const [isRunningAnalysis, setIsRunningAnalysis] = useState(false);
+  const [selectedForAnalysis, setSelectedForAnalysis] = useState([]);
+  const [analysisStatus, setAnalysisStatus] = useState({});
+
+  // Add premium applications state
+  const [premiumApplications, setPremiumApplications] = useState([]);
+  const [loadingPremiumApps, setLoadingPremiumApps] = useState(false);
 
   // Add debug console logs
   console.log("=== ADMIN COMPONENT LOADED ===");
@@ -169,6 +178,61 @@ export default function AdminDashboard() {
   };
 
   // Add batch matching function
+  const runPDFAnalysis = async () => {
+    if (selectedForAnalysis.length === 0) {
+      alert('Please select at least one startup to analyze');
+      return;
+    }
+
+    try {
+      setIsRunningAnalysis(true);
+      
+      // Update status for selected startups to show they're being analyzed
+      const newStatus = {};
+      selectedForAnalysis.forEach(id => {
+        newStatus[id] = 'analyzing';
+      });
+      setAnalysisStatus(prev => ({ ...prev, ...newStatus }));
+
+      setDebugInfo(prev => prev + `🔬 Starting PDF analysis for ${selectedForAnalysis.length} startups...\n`);
+
+      // Call the Python analysis script
+      const analysisResponse = await fetch('/api/admin/run-pdf-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          startupIds: selectedForAnalysis
+        })
+      });
+      
+      if (analysisResponse.ok) {
+        const result = await analysisResponse.json();
+        
+        // Update status for all selected startups
+        const completedStatus = {};
+        selectedForAnalysis.forEach(id => {
+          completedStatus[id] = 'completed';
+        });
+        setAnalysisStatus(prev => ({ ...prev, ...completedStatus }));
+        
+        setDebugInfo(prev => prev + `✅ PDF analysis completed for ${selectedForAnalysis.length} startups!\n`);
+        alert(`PDF analysis completed for ${selectedForAnalysis.length} startups!`);
+        setSelectedForAnalysis([]);
+        await loadData();
+      } else {
+        throw new Error('Failed to run PDF analysis');
+      }
+    } catch (error) {
+      console.error('Error running PDF analysis:', error);
+      setDebugInfo(prev => prev + `❌ Error: ${error.message}\n`);
+      alert('Error running PDF analysis. Please try again.');
+    } finally {
+      setIsRunningAnalysis(false);
+    }
+  };
+
   const runBatchMatching = async () => {
     if (selectedStartups.length === 0) {
       alert('Please select at least one startup');
@@ -433,7 +497,9 @@ export default function AdminDashboard() {
             {[
               { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
               { id: 'submissions', label: 'Submissions', icon: Users },
+              { id: 'analysis', label: 'PDF Analysis', icon: Brain },
               { id: 'matches', label: 'Match Validation', icon: Target },
+              { id: 'premium', label: 'Premium Applications', icon: Crown },
               { id: 'debug', label: 'Debug', icon: AlertCircle }
             ].map(tab => (
               <button
@@ -477,6 +543,105 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">GPT Approved</h3>
                 <div className="text-3xl font-bold text-purple-600">{stats.gptApprovedMatches}</div>
                 <p className="text-sm text-gray-600">AI recommendations</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PDF Analysis Tab */}
+        {activeTab === 'analysis' && (
+          <div className="space-y-6">
+            {/* Analysis Controls */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">PDF Analysis & Scoring</h2>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setSelectedForAnalysis([])}
+                    className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    Clear Selection
+                  </button>
+                  <button
+                    onClick={runPDFAnalysis}
+                    disabled={isRunningAnalysis || selectedForAnalysis.length === 0}
+                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {isRunningAnalysis ? (
+                      <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                    ) : (
+                      <Brain className="h-4 w-4 mr-2" />
+                    )}
+                    {isRunningAnalysis ? 'Analyzing...' : 'Run PDF Analysis'}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  Select startups to analyze their pitch decks with AI. This will extract technical details, 
+                  score them across 5 categories, and generate comprehensive investment analysis.
+                </p>
+                <p className="text-xs text-purple-600">
+                  {selectedForAnalysis.length} startup(s) selected for analysis
+                </p>
+              </div>
+
+              {/* Startup List for Analysis */}
+              <div className="space-y-2">
+                {submissions
+                  .filter(sub => sub.fields['Non-Confidential Pitch Deck'])
+                  .map(submission => (
+                  <div
+                    key={submission.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedForAnalysis.includes(submission.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedForAnalysis(prev => [...prev, submission.id]);
+                          } else {
+                            setSelectedForAnalysis(prev => prev.filter(id => id !== submission.id));
+                          }
+                        }}
+                        className="h-4 w-4 text-purple-600 focus:ring-purple-500"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {submission.fields[SUBMISSION_FIELDS.STARTUP_NAME] || 'Unknown'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {submission.fields[SUBMISSION_FIELDS.DRUG_MODALITY]} • {submission.fields[SUBMISSION_FIELDS.DISEASE_FOCUS]}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      {submission.fields['Overall Score'] && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Score: {submission.fields['Overall Score']}/10
+                        </span>
+                      )}
+                      
+                      {analysisStatus[submission.id] === 'analyzing' && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          <Loader2 className="animate-spin h-3 w-3 mr-1" />
+                          Analyzing...
+                        </span>
+                      )}
+                      
+                      {analysisStatus[submission.id] === 'completed' && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <Check className="h-3 w-3 mr-1" />
+                          Complete
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -767,6 +932,15 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Premium Applications Tab */}
+        {activeTab === 'premium' && (
+          <PremiumApplicationsPanel 
+            applications={premiumApplications}
+            loading={loadingPremiumApps}
+            onRefresh={loadPremiumApplications}
+          />
+        )}
+
         {/* Debug Tab */}
         {activeTab === 'debug' && (
           <div className="bg-white rounded-lg shadow">
@@ -867,6 +1041,294 @@ export default function AdminDashboard() {
               <pre className="bg-gray-50 rounded p-4 text-sm">
                 {JSON.stringify(selectedSubmission.fields, null, 2)}
               </pre>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Function to load premium applications
+  async function loadPremiumApplications() {
+    setLoadingPremiumApps(true);
+    try {
+      // Try to get from dedicated premium table first, fallback to general submissions
+      let response;
+      try {
+        response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Premium%20Support%20Applications`, {
+          headers: {
+            'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        // Fallback to general submissions table
+        const filterFormula = encodeURIComponent(`{Application Type} = "Premium Support"`);
+        response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Startup%20Submissions?filterByFormula=${filterFormula}`, {
+          headers: {
+            'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        setPremiumApplications(data.records || []);
+        console.log('✅ Premium applications loaded:', data.records?.length || 0);
+      }
+    } catch (error) {
+      console.error('❌ Error loading premium applications:', error);
+    } finally {
+      setLoadingPremiumApps(false);
+    }
+  }
+
+  // Load premium applications on component mount
+  useEffect(() => {
+    if (activeTab === 'premium') {
+      loadPremiumApplications();
+    }
+  }, [activeTab]);
+}
+
+// Premium Applications Panel Component
+function PremiumApplicationsPanel({ applications, loading, onRefresh }: {
+  applications: any[];
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  const updateApplicationStatus = async (appId: string, newStatus: string) => {
+    setUpdatingStatus(true);
+    try {
+      const response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Premium%20Support%20Applications/${appId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fields: {
+            'Application Status': newStatus,
+            'Reviewed At': new Date().toISOString()
+          }
+        })
+      });
+
+      if (response.ok) {
+        onRefresh(); // Reload applications
+        console.log('✅ Application status updated');
+      }
+    } catch (error) {
+      console.error('❌ Error updating application status:', error);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Approved': return 'bg-green-100 text-green-800';
+      case 'Rejected': return 'bg-red-100 text-red-800';
+      case 'Under Review': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (score: number) => {
+    if (score >= 8) return 'bg-red-100 text-red-800 border-red-200';
+    if (score >= 6) return 'bg-orange-100 text-orange-800 border-orange-200';
+    if (score >= 4) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-purple-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Premium Support Applications</h2>
+            <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+              {applications.length} applications
+            </span>
+          </div>
+          <Button onClick={onRefresh} disabled={loading} className="flex items-center gap-2">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {loading ? (
+          <div className="text-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-purple-600" />
+            <p className="text-gray-600">Loading applications...</p>
+          </div>
+        ) : applications.length === 0 ? (
+          <div className="text-center py-8">
+            <Star className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-600">No premium support applications found</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {applications.map((app) => {
+              const fields = app.fields;
+              const priorityScore = fields['Priority Score'] || 0;
+              
+              return (
+                <div key={app.id} className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {fields['Company Name'] || 'Unknown Company'}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {fields['Founder Name']} • {fields['Email']}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(priorityScore)}`}>
+                        Priority: {priorityScore}/10
+                      </span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(fields['Application Status'])}`}>
+                        {fields['Application Status'] || 'Under Review'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Stage:</span>
+                      <p className="text-gray-600">{fields['Current Stage']}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Funding Goal:</span>
+                      <p className="text-gray-600">{fields['Funding Goal']}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Industry:</span>
+                      <p className="text-gray-600">{fields['Industry Focus']}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Timeline:</span>
+                      <p className="text-gray-600">{fields['Fundraising Timeline']}</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <span className="font-medium text-gray-700">Challenges:</span>
+                    <p className="text-gray-600 text-sm mt-1">{fields['Specific Challenges']}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">
+                      Applied: {new Date(fields['Submitted At']).toLocaleDateString()}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedApp(app)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View Details
+                      </Button>
+                      {fields['Application Status'] !== 'Approved' && (
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => updateApplicationStatus(app.id, 'Approved')}
+                          disabled={updatingStatus}
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Approve
+                        </Button>
+                      )}
+                      {fields['Application Status'] !== 'Rejected' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-300 text-red-700 hover:bg-red-50"
+                          onClick={() => updateApplicationStatus(app.id, 'Rejected')}
+                          disabled={updatingStatus}
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Reject
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Application Details Modal */}
+      {selectedApp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">
+                {selectedApp.fields['Company Name']} - Premium Application
+              </h3>
+              <button
+                onClick={() => setSelectedApp(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Why Premium Support?</h4>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    {selectedApp.fields['Why Premium Support']}
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Specific Challenges</h4>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    {selectedApp.fields['Specific Challenges']}
+                  </p>
+                </div>
+
+                {selectedApp.fields['Additional Info'] && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Additional Information</h4>
+                    <p className="text-gray-700 text-sm leading-relaxed">
+                      {selectedApp.fields['Additional Info']}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div>
+                    <span className="font-medium text-gray-700">Previous Funding:</span>
+                    <p className="text-gray-600">{selectedApp.fields['Previous Funding Raised'] || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Current Revenue:</span>
+                    <p className="text-gray-600">{selectedApp.fields['Current Revenue'] || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Team Size:</span>
+                    <p className="text-gray-600">{selectedApp.fields['Team Size'] || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Pitch Deck Status:</span>
+                    <p className="text-gray-600">{selectedApp.fields['Pitch Deck Status']}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
